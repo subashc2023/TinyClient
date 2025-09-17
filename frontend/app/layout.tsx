@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/mode-toggle";
+import { ApiStatusDot } from "@/components/api-status";
 import Image from "next/image";
 
 const geistSans = Geist({
@@ -46,6 +47,7 @@ export default function RootLayout({
                     className="hidden h-6 w-auto dark:block"
                   />
                   <div className="text-lg font-semibold tracking-tight">TinyClient</div>
+                  <ApiStatusDot />
                 </div>
                 <div className="col-start-3 justify-self-end">
                   <ModeToggle />
