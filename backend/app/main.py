@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(
-    title="TinyClient Backend",
+    title="TinyClient",
     description="TinyClient FastAPI server",
     version="0.1.0",
     docs_url="/docs",

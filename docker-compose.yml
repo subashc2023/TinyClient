@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: tinyclient-backend:dev
+    container_name: tinyclient-backend
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    image: tinyclient-frontend:dev
+    container_name: tinyclient-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+

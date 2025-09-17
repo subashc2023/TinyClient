@@ -1,0 +1,19 @@
+# Bytecode and caches
+__pycache__
+*.py[cod]
+*$py.class
+.mypy_cache
+.pytest_cache
+
+# Virtual environments
+.venv
+venv
+
+# Env files
+.env
+.env.*
+
+# Misc
+.DS_Store
+*.log
+.git
