@@ -32,50 +32,38 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
-
-The easiest way to get started:
+### Option 1: Docker (recommended)
 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
 cd TinyClient
 
-# Start the entire stack
-docker-compose up
-
-# Or start services individually
-docker-compose up frontend  # Frontend only
-docker-compose up backend   # Backend only
+# Start the stack
+docker-compose up --build
 ```
 
 **Access the application:**
 - 🌐 Frontend: http://localhost:3000
 - 📚 API Docs: http://localhost:8001/docs
 
-### Option 2: Local Development
+### Option 2: Local development
 
 #### Prerequisites
 - **Node.js 18+** (for frontend)
 - **Python 3.12+** (for backend)
 - **npm** or **bun** (package manager)
 
-#### Backend Setup
+#### Backend
 
 ```bash
 cd backend
 
-# Install dependencies with uv
+# Install deps, migrate, (optionally) seed, then run
 uv sync
-
-# Run migrations (creates DB/tables if missing)
-python -m app.setup migrate
-
-# Seed with default users from environment
-python -m app.setup seed
-
-# Start the server
-python -m app.main
+uv run python -m app.setup migrate
+uv run python -m app.setup seed   # requires ADMIN_* and USER_* in backend/.env
+uv run python -m app.main
 ```
 
 > Note: Prefer `python -m` for app commands locally. Docker images still use `uv` as the runtime.
@@ -92,21 +80,15 @@ npm install
 npm run dev
 ```
 
-## 🗄️ Database Management
-
-The backend includes convenient CLI commands for database operations:
+## 🗄️ Backend commands (cheat sheet)
 
 ```bash
 cd backend
-
-# Apply all migrations (create DB/tables if missing)
-python -m app.setup migrate
-
-# Seed database with default users from env
-python -m app.setup seed
-
-# Downgrade one revision
-python -m app.setup downgrade
+uv sync
+uv run python -m app.setup migrate     # apply migrations (creates DB/tables if missing)
+uv run python -m app.setup seed        # seed default users from env
+uv run python -m app.setup downgrade   # rollback one revision
+uv run python -m app.main              # run FastAPI
 ```
 
 ### Default Users
@@ -148,86 +130,32 @@ The frontend automatically connects to the backend via:
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
 ```
 
-## 📁 Project Structure
 
-```
-TinyClient/
-├── backend/                 # FastAPI backend
-│   ├── app/
-│   │   ├── main.py         # Application entry point
-│   │   ├── models.py       # Database models
-│   │   ├── schemas.py      # Pydantic models
-│   │   ├── security.py     # Auth utilities
-│   │   ├── database.py     # DB connection
-│   │   ├── dependencies.py # FastAPI dependencies
-│   │   ├── setup.py        # CLI: migrate/seed/downgrade
-│   │   └── routers/
-│   │       └── auth.py     # Authentication routes
-│   ├── alembic.ini         # Alembic configuration
-│   ├── alembic/
-│   │   ├── env.py          # Alembic environment
-│   │   └── versions/       # Migration scripts
-│   ├── pyproject.toml   # uv project configuration
-│   └── uv.lock         # uv lockfile
-├── frontend/               # Next.js frontend
-│   ├── app/               # App router pages
-│   ├── components/        # Reusable components
-│   ├── lib/              # Utilities & contexts
-│   └── package.json
-├── docker-compose.yml     # Multi-service orchestration
-└── README.md
-```
 
-## 🐳 Docker Commands
+## 🐳 Docker commands
 
 ```bash
-# Build and start all services
-docker-compose up --build
-
-# Start in background
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild specific service
-docker-compose up --build frontend
+docker-compose up --build       # build and start
+docker-compose up -d            # start in background
+docker-compose logs -f          # follow logs
+docker-compose down             # stop and remove
 ```
 
-## 🔒 Authentication API
+## 🔗 Useful links
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/login` | POST | Authenticate with email/password |
-| `/api/auth/refresh` | POST | Refresh access token |
-| `/api/auth/logout` | POST | Invalidate refresh token |
-| `/api/auth/me` | GET | Get current user info |
-| `/api/auth/verify` | GET | Verify token validity |
+- API docs: http://localhost:8001/docs
+- Dev guide (details): see `CLAUDE.md`
 
-## 🛠️ Development Scripts
+## 🛠️ Scripts
 
-### Backend
-```bash
-cd backend
-python -m app.main           # Start server
-python -m app.db_commands init  # Setup database
-```
-
-### Frontend
+Frontend:
 ```bash
 cd frontend
-npm run dev        # Development server with Turbopack
-npm run build      # Production build
-npm run start      # Production server
-npm run lint       # ESLint
+npm run dev    # dev server
+npm run build  # production build
+npm run start  # production server
+npm run lint   # eslint
 ```
-
-## ⚠️ Known Issues
-
-- **uv compatibility**: There's a compatibility issue between `uv run`, Python 3.13, and SQLAlchemy causing import errors. Use `uv sync` for dependency management but run the application with `python -m` directly instead of `uv run python -m`.
 
 ## 🤝 Contributing
 
