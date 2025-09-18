@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .routers import auth
 
 
 app = FastAPI(
     title="TinyClient",
-    description="TinyClient FastAPI server",
+    description="TinyClient FastAPI server with authentication",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(auth.router)
 
 
 @app.get("/", tags=["system"])

@@ -54,7 +54,7 @@ export default function Home() {
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3">
                 <Button asChild size="lg">
-                  <a href="#get-started">Get Started</a>
+                  <a href="/login">Get Started</a>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                   <a href="#docs">View Documentation</a>
@@ -161,7 +161,7 @@ export default function Home() {
           </ol>
           <div className="mt-10 text-center">
             <Button asChild>
-              <a href="#get-started">Start in minutes</a>
+              <a href="/login">Start in minutes</a>
             </Button>
           </div>
         </div>

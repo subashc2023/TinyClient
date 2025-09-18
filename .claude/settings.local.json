@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(curl:*)",
+      "Bash(python -m app.db_commands:*)",
+      "Bash(del \"C:\\workspace\\projects\\TinyClient\\backend\\requirements.txt\")",
+      "Bash(uv sync:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(del \"C:\\workspace\\projects\\TinyClient\\frontend\\components\\user-dropdown.tsx\")",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

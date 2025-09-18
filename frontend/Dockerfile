@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.9
 
-FROM oven/bun:1.1-alpine as base
+FROM oven/bun:1-alpine as base
 WORKDIR /app
 
 COPY bun.lock package.json ./
