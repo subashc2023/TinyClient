@@ -1,16 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { getApiBaseUrl } from "@/lib/config";
-
-export interface User {
-  id: number;
-  email: string;
-  username: string;
-  is_admin: boolean;
-  created_at: string;
-  updated_at?: string;
-}
+import { loginService, verifyService, logoutService } from "@/services/auth";
+import type { User } from "@/lib/types";
 
 export interface AuthContextType {
   user: User | null;
@@ -52,24 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyToken = async (accessToken: string) => {
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/auth/verify`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        setToken(accessToken);
-      } else {
-        // Token is invalid, remove it
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        setToken(null);
-        setUser(null);
-      }
+      const data = await verifyService(accessToken);
+      setUser(data.user);
+      setToken(accessToken);
     } catch (error) {
       console.error("Error verifying token:", error);
       localStorage.removeItem("access_token");
@@ -84,28 +61,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (emailOrUsername: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email_or_username: emailOrUsername, password }),
-      });
+      const data = await loginService(emailOrUsername, password);
+      const { user: userData, tokens } = data;
 
-      if (response.ok) {
-        const data = await response.json();
-        const { user: userData, tokens } = data;
+      setUser(userData);
+      setToken(tokens.access_token);
 
-        setUser(userData);
-        setToken(tokens.access_token);
-
-        // Store tokens
-        localStorage.setItem("access_token", tokens.access_token);
-        localStorage.setItem("refresh_token", tokens.refresh_token);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Login failed");
-      }
+      // Store tokens
+      localStorage.setItem("access_token", tokens.access_token);
+      localStorage.setItem("refresh_token", tokens.refresh_token);
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -119,13 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const accessToken = localStorage.getItem("access_token");
       if (accessToken) {
-        await fetch(`${getApiBaseUrl()}/api/auth/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
+        await logoutService(accessToken);
       }
     } catch (error) {
       console.error("Logout error:", error);
