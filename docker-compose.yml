@@ -7,6 +7,14 @@ services:
     container_name: tinyclient-backend
     ports:
       - "8001:8001"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./tinyclient.db}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - USER_EMAIL=${USER_EMAIL}
+      - USER_USERNAME=${USER_USERNAME}
+      - USER_PASSWORD=${USER_PASSWORD}
     restart: unless-stopped
 
   frontend:

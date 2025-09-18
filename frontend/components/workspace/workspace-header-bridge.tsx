@@ -24,5 +24,5 @@ export function WorkspaceHeaderBridge({ setWorkspaceControls }: WorkspaceHeaderB
     });
   }, [leftSidebarOpen, rightSidebarOpen, toggleLeftSidebar, toggleRightSidebar, setWorkspaceControls]);
 
-  return null; // This component doesn't render anything
+  return null;
 }

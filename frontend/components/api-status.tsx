@@ -1,14 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { getApiBaseUrl } from "@/lib/config";
 
 type ApiHealthState = "loading" | "ok" | "error";
 
 const DEFAULT_POLL_MS = 5000;
-
-function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
-}
 
 export function ApiStatusDot({ pollMs = DEFAULT_POLL_MS }: { pollMs?: number }) {
   const [state, setState] = React.useState<ApiHealthState>("loading");

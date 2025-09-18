@@ -9,10 +9,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 COPY backend/app ./app
-COPY .env .env
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/alembic ./alembic
 
 EXPOSE 8001
 
-CMD ["sh", "-c", "uv run python -m app.db_commands init && uv run python -m app.db_commands seed && uv run python -m app.main"]
+CMD ["sh", "-c", "uv run python -m app.setup migrate && if [ -n \"$ADMIN_EMAIL\" ]; then uv run python -m app.setup seed; fi; uv run python -m app.main"]
 
 

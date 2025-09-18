@@ -68,17 +68,17 @@ cd backend
 # Install dependencies with uv
 uv sync
 
-# Initialize database (use python directly due to uv/SQLAlchemy compatibility issue)
-python -m app.db_commands init
+# Run migrations (creates DB/tables if missing)
+python -m app.setup migrate
 
-# Seed with default users
-python -m app.db_commands seed
+# Seed with default users from environment
+python -m app.setup seed
 
-# Start the server (use python directly due to uv/SQLAlchemy compatibility issue)
+# Start the server
 python -m app.main
 ```
 
-> **Note**: Due to compatibility issues between uv, Python 3.13, and SQLAlchemy, run the application and database commands with `python -m` directly instead of `uv run python -m`.
+> Note: Prefer `python -m` for app commands locally. Docker images still use `uv` as the runtime.
 
 #### Frontend Setup
 
@@ -99,14 +99,14 @@ The backend includes convenient CLI commands for database operations:
 ```bash
 cd backend
 
-# Create database tables
-python -m app.db_commands init
+# Apply all migrations (create DB/tables if missing)
+python -m app.setup migrate
 
-# Seed database with default users
-python -m app.db_commands seed
+# Seed database with default users from env
+python -m app.setup seed
 
-# Reset database (⚠️ DESTRUCTIVE - deletes all data)
-python -m app.db_commands reset
+# Downgrade one revision
+python -m app.setup downgrade
 ```
 
 ### Default Users
@@ -133,10 +133,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Initial Users (for database seeding)
+ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=admin123!
+USER_USERNAME=user
 USER_EMAIL=user@example.com
-USER_PASSWORD=user123
+USER_PASSWORD=user123!
 ```
 
 ### Frontend Configuration
@@ -158,9 +160,13 @@ TinyClient/
 │   │   ├── security.py     # Auth utilities
 │   │   ├── database.py     # DB connection
 │   │   ├── dependencies.py # FastAPI dependencies
-│   │   ├── db_commands.py  # CLI utilities
+│   │   ├── setup.py        # CLI: migrate/seed/downgrade
 │   │   └── routers/
 │   │       └── auth.py     # Authentication routes
+│   ├── alembic.ini         # Alembic configuration
+│   ├── alembic/
+│   │   ├── env.py          # Alembic environment
+│   │   └── versions/       # Migration scripts
 │   ├── pyproject.toml   # uv project configuration
 │   └── uv.lock         # uv lockfile
 ├── frontend/               # Next.js frontend
