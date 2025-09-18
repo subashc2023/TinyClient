@@ -7,8 +7,11 @@ services:
     container_name: tinyclient-backend
     ports:
       - "8001:8001"
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=${DATABASE_URL:-sqlite:///./tinyclient.db}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}

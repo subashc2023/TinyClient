@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Lock, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouteOverlay } from "@/lib/route-overlay-context";
 
 export default function LoginPage() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -13,14 +14,21 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { startTransition, stopTransition } = useRouteOverlay();
 
-  // Redirect if already authenticated
+  // Prefetch workspace and redirect if already authenticated
+  useEffect(() => {
+    router.prefetch("/workspace");
+  }, [router]);
+
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/workspace");
+      startTransition("Opening workspace...");
+      router.replace("/workspace");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -37,7 +45,8 @@ export default function LoginPage() {
 
     try {
       await login(emailOrUsername, password);
-      router.push("/workspace");
+      startTransition("Opening workspace...");
+      router.replace("/workspace");
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "Login failed. Please check your credentials.");
@@ -56,6 +65,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
+      {isRedirecting && (
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex items-center gap-3 text-sm">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            Redirecting to workspace...
+          </div>
+        </div>
+      )}
       {/* Left side - Login form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-8 max-w-md mx-auto w-full">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">

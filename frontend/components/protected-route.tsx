@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useRouteOverlay } from "@/lib/route-overlay-context";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,16 +18,19 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { startTransition } = useRouteOverlay();
 
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.push(redirectTo);
+        startTransition("Redirecting to login...");
+        router.replace(redirectTo);
         return;
       }
 
       if (requireAdmin && user && !user.is_admin) {
-        router.push("/workspace"); // Redirect non-admin users to workspace
+        startTransition("Redirecting...");
+        router.replace("/workspace"); // Redirect non-admin users to workspace
         return;
       }
     }

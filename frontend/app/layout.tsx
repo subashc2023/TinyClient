@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { ConditionalHeader } from "@/components/conditional-header";
+import { RouteOverlayProvider } from "@/lib/route-overlay-context";
 import Image from "next/image";
 
 const geistSans = Geist({
@@ -31,13 +32,15 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              <ConditionalHeader />
-              <main className="flex-1">{children}</main>
-              <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-                <div className="container mx-auto px-4">© {new Date().getFullYear()} TinyClient</div>
-              </footer>
-            </div>
+            <RouteOverlayProvider>
+              <div className="min-h-screen flex flex-col">
+                <ConditionalHeader />
+                <main className="flex-1">{children}</main>
+                <footer className="border-t py-6 text-center text-sm text-muted-foreground">
+                  <div className="container mx-auto px-4">© {new Date().getFullYear()} TinyClient</div>
+                </footer>
+              </div>
+            </RouteOverlayProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

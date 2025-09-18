@@ -13,17 +13,20 @@ import { useAuth } from "@/lib/auth-context";
 import { ROUTES } from "@/lib/routes";
 import { User as UserIcon, Settings, LogOut, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useRouteOverlay } from "@/lib/route-overlay-context";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { startTransition } = useRouteOverlay();
 
   if (!user) return null;
 
   const handleLogout = async () => {
     try {
       await logout();
-      router.push(ROUTES.home);
+      startTransition("Signing out...");
+      router.replace(ROUTES.home);
     } catch (error) {
       console.error("Logout error:", error);
     }

@@ -43,6 +43,16 @@ class ApiClient {
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
+        const requestUrl: string = (originalRequest?.url || "") as string;
+        const isAuthEndpoint =
+          requestUrl.includes("/api/auth/refresh") ||
+          requestUrl.includes("/api/auth/login") ||
+          requestUrl.includes("/api/auth/verify");
+
+        // Never try to refresh on auth endpoints themselves
+        if (isAuthEndpoint) {
+          return Promise.reject(error);
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {

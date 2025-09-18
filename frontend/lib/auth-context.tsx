@@ -47,8 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await verifyService(accessToken);
       setUser(data.user);
       setToken(accessToken);
-    } catch (error) {
-      console.error("Error verifying token:", error);
+    } catch (error: unknown) {
+      const status = (error as any)?.response?.status;
+      if (status !== 401) {
+        console.error("Error verifying token:", error);
+      }
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       setToken(null);
