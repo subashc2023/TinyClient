@@ -36,6 +36,10 @@ export function UserMenu() {
     router.push(ROUTES.settings);
   };
 
+  const handleAdmin = () => {
+    router.push(ROUTES.admin);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -57,6 +61,13 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {user.is_admin && (
+          <DropdownMenuItem onClick={handleAdmin}>
+            <Shield className="mr-2 h-4 w-4" />
+            Admin
+          </DropdownMenuItem>
+        )}
+        {user.is_admin && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={handleSettings}>
           <Settings className="mr-2 h-4 w-4" />
           Settings

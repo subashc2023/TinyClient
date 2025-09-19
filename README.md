@@ -10,6 +10,7 @@
 ## ✨ Features
 
 - **🔐 Secure Authentication** - JWT-based auth with refresh tokens and bcrypt password hashing
+- **Email verification & invites** - Resend-powered signup, admin invitations, and soft-delete controls
 - **🎨 Modern UI** - Next.js 15 with React 19, Tailwind v4, and ShadCN components
 - **🌙 Dark Mode** - Seamless theme switching with system preference detection
 - **📱 Responsive Design** - Mobile-first design with beautiful gradients and animations
@@ -53,6 +54,12 @@ docker-compose up --build
 - **Node.js 18+** (for frontend)
 - **Python 3.12+** (for backend)
 - **npm** or **bun** (package manager)
+
+#### Dev helper (Windows)
+
+```powershell
+pwsh -File scripts/dev.ps1
+```
 
 #### Backend
 
@@ -102,9 +109,15 @@ After seeding, you can log in with:
 
 ### Environment Variables
 
+When using Docker Compose, the root `.env` file is loaded for both services. Make sure any public flags such as `NEXT_PUBLIC_ALLOW_SIGNUP` are present (these are already included by default).
+
 Create a `.env` file in the `backend` directory:
 
 ```env
+# Branding
+PROJECT_NAME=TinyClient
+NEXT_PUBLIC_PROJECT_NAME=TinyClient
+
 # Database
 DATABASE_URL=sqlite:///./tinyclient.db
 
@@ -114,7 +127,18 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
-# Initial Users (for database seeding)
+# Signup & invitations
+ALLOW_SIGNUP=true
+EMAIL_VERIFICATION_EXPIRATION_HOURS=24
+INVITE_EXPIRATION_HOURS=24
+FRONTEND_BASE_URL=http://localhost:3000
+
+# Resend email settings
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=noreply@subash.co
+RESEND_FROM_NAME=TinyClient
+
+# Initial users (for database seeding)
 ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=admin123!
@@ -128,6 +152,7 @@ USER_PASSWORD=user123!
 The frontend automatically connects to the backend via:
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
+NEXT_PUBLIC_ALLOW_SIGNUP=true
 ```
 
 
@@ -174,3 +199,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
   <strong>Built with ❤️ using modern web technologies</strong>
 </div>
+
+## Email Templates
+
+- Set `PROJECT_NAME` (and optionally `NEXT_PUBLIC_PROJECT_NAME`) in your `.env` before building so the generated markup matches your branding.
+- Run `bun run emails:dev` from `frontend/` to preview the React Email components.
+- Run `bun run emails:build` from `frontend/` whenever templates change; it writes HTML/text artifacts to `backend/app/email_templates/` and updates the manifest consumed by FastAPI.
+- Before starting the API locally after editing a template, regenerate the artifacts:
+```bash
+cd frontend
+bun install
+bun run emails:build
+```
+- Docker builds run the same step automatically via the backend image, so `docker-compose up --build` produces fresh templates.

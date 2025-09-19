@@ -1,19 +1,10 @@
-"use client";
+﻿"use client";
 
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth-context";
 import { useWorkspaceLayout } from "@/lib/workspace-layout-context";
-import { User, Settings, LogOut, Shield, PanelLeft, PanelRight } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { PanelLeft, PanelRight } from "lucide-react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { ApiDocsButton } from "@/components/api-docs-button";
@@ -21,27 +12,13 @@ import { UserMenu } from "@/components/user-menu";
 import { ROUTES } from "@/lib/routes";
 
 export function WorkspaceHeader() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const {
     leftSidebarOpen,
     rightSidebarOpen,
     toggleLeftSidebar,
-    toggleRightSidebar
+    toggleRightSidebar,
   } = useWorkspaceLayout();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push(ROUTES.home);
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
-  const handleSettings = () => {
-    router.push(ROUTES.settings);
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">

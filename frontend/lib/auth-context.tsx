@@ -15,6 +15,20 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getErrorMessage(error: unknown): string {
+  if (typeof error === "object" && error !== null) {
+    const response = (error as { response?: { data?: { detail?: string } } }).response;
+    const detail = response?.data?.detail;
+    if (typeof detail === "string" && detail.length > 0) {
+      return detail;
+    }
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -30,13 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!user && !!token;
 
-  // Load token from localStorage on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem("access_token");
+    const savedToken = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
     if (savedToken) {
       setToken(savedToken);
-      // Verify token and get user info
-      verifyToken(savedToken);
+      void verifyToken(savedToken);
     } else {
       setIsLoading(false);
     }
@@ -48,8 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setToken(accessToken);
     } catch (error: unknown) {
-      const status = (error as any)?.response?.status;
-      if (status !== 401) {
+      if (typeof error === "object" && error !== null) {
+        const response = (error as { response?: { status?: number } }).response;
+        const status = response?.status;
+        if (status !== 401 && status !== 403) {
+          console.error("Error verifying token:", error);
+        }
+      } else {
         console.error("Error verifying token:", error);
       }
       localStorage.removeItem("access_token");
@@ -70,12 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       setToken(tokens.access_token);
 
-      // Store tokens
       localStorage.setItem("access_token", tokens.access_token);
       localStorage.setItem("refresh_token", tokens.refresh_token);
     } catch (error) {
+      const message = getErrorMessage(error);
       console.error("Login error:", error);
-      throw error;
+      throw new Error(message);
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear local state and storage
       setUser(null);
       setToken(null);
       localStorage.removeItem("access_token");
@@ -109,9 +125,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }

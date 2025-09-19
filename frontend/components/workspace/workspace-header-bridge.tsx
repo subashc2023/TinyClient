@@ -1,10 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { useWorkspaceLayout } from "@/lib/workspace-layout-context";
 
+interface WorkspaceControls {
+  leftSidebarOpen: boolean;
+  rightSidebarOpen: boolean;
+  toggleLeftSidebar: () => void;
+  toggleRightSidebar: () => void;
+}
+
 interface WorkspaceHeaderBridgeProps {
-  setWorkspaceControls: (controls: any) => void;
+  setWorkspaceControls: (controls: WorkspaceControls) => void;
 }
 
 export function WorkspaceHeaderBridge({ setWorkspaceControls }: WorkspaceHeaderBridgeProps) {
@@ -12,7 +19,7 @@ export function WorkspaceHeaderBridge({ setWorkspaceControls }: WorkspaceHeaderB
     leftSidebarOpen,
     rightSidebarOpen,
     toggleLeftSidebar,
-    toggleRightSidebar
+    toggleRightSidebar,
   } = useWorkspaceLayout();
 
   useEffect(() => {
@@ -20,7 +27,7 @@ export function WorkspaceHeaderBridge({ setWorkspaceControls }: WorkspaceHeaderB
       leftSidebarOpen,
       rightSidebarOpen,
       toggleLeftSidebar,
-      toggleRightSidebar
+      toggleRightSidebar,
     });
   }, [leftSidebarOpen, rightSidebarOpen, toggleLeftSidebar, toggleRightSidebar, setWorkspaceControls]);
 

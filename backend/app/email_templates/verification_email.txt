@@ -1,0 +1,21 @@
+TinyClient
+
+One click and you can start herding all your Model Context Protocol tools.
+
+
+CONFIRM YOUR EMAIL
+
+Thanks for joining TinyClient. This link proves you are a real human (or at
+least a very polite AI) and gives you access to your workspace.
+
+Verify my address {{verification_link}}
+
+The link stays fresh for 24 hours. After that we release it back into the wild
+and you'll need a new one.
+
+Didn't ask for this? Release this carrier pigeon and carry on: no account
+changes will be made.
+
+--------------------------------------------------------------------------------
+
+Made with ?? + ? for Model Context Protocol explorers everywhere.

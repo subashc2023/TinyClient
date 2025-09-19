@@ -1,10 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { allowSignup, getProjectName } from "@/lib/config";
 import { Layout, Server, Lock, PlugZap, Zap, Terminal } from "lucide-react";
 import * as React from "react";
 
 export default function Home() {
+  const projectName = getProjectName();
+  const nameParts = projectName.trim().split(/\s+/);
+  const firstWord = nameParts[0] ?? projectName;
+  const remainingWords = nameParts.slice(1).join(' ');
   return (
     <>
       {/* Hero */}
@@ -34,27 +39,27 @@ export default function Home() {
           <div className="grid min-h-[calc(100vh-3.5rem)] place-items-center py-12 md:py-20">
             <div className="text-center">
               <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-foreground">
-                <span>Open‑source</span>
+                <span>Open-source</span>
                 <span className="h-1 w-1 rounded-full bg-foreground/50" />
                 <span>MIT</span>
                 <span className="h-1 w-1 rounded-full bg-foreground/50" />
                 <span>Dockerized</span>
               </div>
               <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
-                <span className="mr-2">Tiny</span>
+                <span className="mr-2">{firstWord}</span>
                 <span className="mx-1 inline-block align-[.18em] relative top-[12px] left-[3px]">
                   <img src="/mcplight.png" alt="MCP" className="inline-block h-[1em] w-auto dark:hidden" />
                   <img src="/mcp.png" alt="MCP" className="hidden h-[1em] w-auto dark:inline-block" />
                 </span>
-                <span className="ml-2">Client</span>
+                {remainingWords && <span className="ml-2">{remainingWords}</span>}
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-balance text-lg leading-relaxed text-foreground">
-                Self‑hostable, private‑by‑default, and instantly extensible. A tiny, blazing‑fast
+                Self-hostable, private-by-default, and instantly extensible. A tiny, blazing-fast
                 MCP client powered by FastAPI and Supabase, with a beautiful Next.js + Tailwind + ShadCN UI.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3">
                 <Button asChild size="lg">
-                  <a href="/login">Get Started</a>
+                  <a href={allowSignup ? "/login?mode=signup" : "/login"}>{allowSignup ? "Get Started" : "Request Access"}</a>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                   <a href="#docs">View Documentation</a>
@@ -90,14 +95,14 @@ export default function Home() {
               </div>
               <h3 className="text-base font-semibold">Solid Backend</h3>
               <p className="mt-2 text-sm text-foreground">
-                FastAPI and Supabase for auth, storage, and data—typed endpoints and crisp DX.
+                FastAPI and Supabase for auth, storage, and data-typed endpoints and crisp DX.
               </p>
             </div>
             <div className="group rounded-xl border bg-card p-6 shadow-sm transition-colors hover:bg-accent/30">
               <div className="mb-3 inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <Lock className="size-4" />
               </div>
-              <h3 className="text-base font-semibold">Private & Self‑hostable</h3>
+              <h3 className="text-base font-semibold">Private & Self-hostable</h3>
               <p className="mt-2 text-sm text-foreground">
                 Run on your own infra. No trackers, no hidden calls. Docker images ready to ship.
               </p>
@@ -124,7 +129,7 @@ export default function Home() {
               <div className="mb-3 inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <Terminal className="size-4" />
               </div>
-              <h3 className="text-base font-semibold">First‑class DX</h3>
+              <h3 className="text-base font-semibold">First-class DX</h3>
               <p className="mt-2 text-sm text-foreground">
                 Clean APIs, strong typing, and sensible defaults so you can move fast without mess.
               </p>
@@ -150,7 +155,7 @@ export default function Home() {
             </li>
             <li className="rounded-xl border bg-card p-6 text-center">
               <div className="mx-auto mb-3 flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">2</div>
-              <h3 className="text-base font-semibold">Configure TinyClient</h3>
+              <h3 className="text-base font-semibold">Configure {projectName}</h3>
               <p className="mt-2 text-sm text-foreground">Tune defaults, scopes, and resources with clean config.</p>
             </li>
             <li className="rounded-xl border bg-card p-6 text-center">
@@ -161,7 +166,7 @@ export default function Home() {
           </ol>
           <div className="mt-10 text-center">
             <Button asChild>
-              <a href="/login">Start in minutes</a>
+              <a href={allowSignup ? "/login?mode=signup" : "/login"}>{allowSignup ? "Start in minutes" : "Request access"}</a>
             </Button>
           </div>
         </div>
@@ -169,3 +174,4 @@ export default function Home() {
     </>
   );
 }
+

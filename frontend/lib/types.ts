@@ -3,6 +3,8 @@ export interface User {
   email: string;
   username: string;
   is_admin: boolean;
+  is_active: boolean;
+  is_verified: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -23,4 +25,20 @@ export interface TokenVerifyResponse {
   user: User;
 }
 
+export interface MessageResponse {
+  message: string;
+}
 
+export interface InviteDetail {
+  email: string;
+  expires_at: string;
+  accepted: boolean;
+}
+
+export interface InviteResponse {
+  id: number;
+  email: string;
+  expires_at: string;
+  invited_by_user_id?: number | null;
+  accepted_at?: string | null;
+}

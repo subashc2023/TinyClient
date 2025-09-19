@@ -1,0 +1,22 @@
+TinyClient
+
+A fresh workspace, a shiny MCP stack, and probably too many sticky notes.
+
+
+JOIN THE PARTY
+
+{{invited_by}} set aside a seat for you. TinyClient keeps Model Context Protocol
+services, prompts, and automations in one tidy lounge so you can focus on the
+clever parts.
+
+Accept invitation {{invite_link}}
+
+Having trouble with the button? Copy and paste this link into your browser:
+{{invite_link}} {{invite_link}}
+
+Not expecting this? Ignore it and we'll quietly recycle the invite link in 24
+hours.
+
+--------------------------------------------------------------------------------
+
+Bring your favorite promptsnacks are metaphorical but enthusiasm is real.

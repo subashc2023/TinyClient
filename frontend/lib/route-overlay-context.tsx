@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -35,14 +35,19 @@ export function RouteOverlayProvider({ children }: { children: React.ReactNode }
 
   // Auto-clear overlay shortly after route changes
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      return;
+    }
     const id = window.setTimeout(() => {
       stopTransition();
     }, 150);
     return () => window.clearTimeout(id);
-  }, [pathname]);
+  }, [pathname, isActive, stopTransition]);
 
-  const value = useMemo(() => ({ isActive, message, startTransition, stopTransition }), [isActive, message, startTransition, stopTransition]);
+  const value = useMemo(
+    () => ({ isActive, message, startTransition, stopTransition }),
+    [isActive, message, startTransition, stopTransition]
+  );
 
   return (
     <RouteOverlayContext.Provider value={value}>
@@ -58,5 +63,3 @@ export function RouteOverlayProvider({ children }: { children: React.ReactNode }
     </RouteOverlayContext.Provider>
   );
 }
-
-

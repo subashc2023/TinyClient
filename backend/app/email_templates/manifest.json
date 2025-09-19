@@ -1,0 +1,12 @@
+{
+  "verification_email": {
+    "subject": "Confirm your TinyClient account",
+    "html": "verification_email.html",
+    "text": "verification_email.txt"
+  },
+  "invite_email": {
+    "subject": "You're invited to TinyClient",
+    "html": "invite_email.html",
+    "text": "invite_email.txt"
+  }
+}

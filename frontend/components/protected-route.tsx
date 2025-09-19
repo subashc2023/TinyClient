@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   requireAdmin = false,
-  redirectTo = "/login"
+  redirectTo = "/login",
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -30,13 +30,11 @@ export function ProtectedRoute({
 
       if (requireAdmin && user && !user.is_admin) {
         startTransition("Redirecting...");
-        router.replace("/workspace"); // Redirect non-admin users to workspace
-        return;
+        router.replace("/workspace");
       }
     }
-  }, [isAuthenticated, isLoading, user, requireAdmin, router, redirectTo]);
+  }, [isAuthenticated, isLoading, user, requireAdmin, router, redirectTo, startTransition]);
 
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -45,12 +43,10 @@ export function ProtectedRoute({
     );
   }
 
-  // Don't render children if not authenticated
   if (!isAuthenticated) {
     return null;
   }
 
-  // Don't render children if admin is required but user is not admin
   if (requireAdmin && user && !user.is_admin) {
     return (
       <div className="min-h-screen flex items-center justify-center">

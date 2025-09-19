@@ -29,13 +29,22 @@ def seed_users() -> None:
       sys.exit(1)
 
     def ensure_user(email: str, username: str, password: str, is_admin: bool) -> None:
-      existing = db.query(User).filter(User.email == email).first()
+      normalized_email = email.strip().lower()
+      existing = db.query(User).filter(User.email == normalized_email).first()
       if existing:
-        print(f"[INFO] User {email} already exists; skipping")
+        print(f"[INFO] User {normalized_email} already exists; skipping")
         return
-      u = User(email=email, username=username, password_hash=hash_password(password), is_admin=is_admin)
+      u = User(
+        email=normalized_email,
+        username=username,
+        password_hash=hash_password(password),
+        is_admin=is_admin,
+        is_active=True,
+        is_verified=True,
+      )
       db.add(u)
-      print(f"[OK] Created {'admin' if is_admin else 'user'}: {email} ({username})")
+      role = "admin" if is_admin else "user"
+      print(f"[OK] Created {role}: {normalized_email} ({username})")
 
     ensure_user(admin_email, admin_username, admin_password, True)
     ensure_user(user_email, user_username, user_password, False)
@@ -71,5 +80,3 @@ def main() -> None:
 
 if __name__ == "__main__":
   main()
-
-

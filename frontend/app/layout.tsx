@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { ConditionalHeader } from "@/components/conditional-header";
 import { RouteOverlayProvider } from "@/lib/route-overlay-context";
-import Image from "next/image";
+import { getProjectName } from "@/lib/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,9 +17,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const projectName = getProjectName();
+
 export const metadata: Metadata = {
-  title: "TinyClient",
-  description: "Tiny MCP Client—fast, tiny, hackable, extendible.",
+  title: projectName,
+  description: `${projectName} MCP client - fast, tiny, hackable, extendible.`,
 };
 
 export default function RootLayout({
@@ -35,9 +37,9 @@ export default function RootLayout({
             <RouteOverlayProvider>
               <div className="min-h-screen flex flex-col">
                 <ConditionalHeader />
-                <main className="flex-1">{children}</main>
+                <main className="flex-1 flex flex-col">{children}</main>
                 <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-                  <div className="container mx-auto px-4">© {new Date().getFullYear()} TinyClient</div>
+                  <div className="container mx-auto px-4">Copyright {new Date().getFullYear()} {projectName}</div>
                 </footer>
               </div>
             </RouteOverlayProvider>
@@ -47,3 +49,4 @@ export default function RootLayout({
     </html>
   );
 }
+

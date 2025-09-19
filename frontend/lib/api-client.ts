@@ -1,4 +1,16 @@
-import axios, { AxiosInstance, AxiosError } from "axios";
+﻿import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
+
+type RequestHeaders = Record<string, string>;
+
+type RetryableRequestConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+  headers?: RequestHeaders;
+};
 
 interface RefreshResponse {
   access_token: string;
@@ -10,8 +22,8 @@ class ApiClient {
   private client: AxiosInstance;
   private isRefreshing = false;
   private failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (reason?: any) => void;
+    resolve: (value: string) => void;
+    reject: (reason?: unknown) => void;
   }> = [];
 
   constructor() {
@@ -26,48 +38,51 @@ class ApiClient {
   }
 
   private setupInterceptors() {
-    // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem("access_token");
         if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+          const nextConfig = config as RetryableRequestConfig;
+          nextConfig.headers = nextConfig.headers ?? {};
+          nextConfig.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor to handle token refresh
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        const originalRequest = error.config as any;
-        const requestUrl: string = (originalRequest?.url || "") as string;
+        const config = error.config as RetryableRequestConfig | undefined;
+        if (!config) {
+          return Promise.reject(error);
+        }
+
+        const requestUrl = config.url ?? "";
         const isAuthEndpoint =
           requestUrl.includes("/api/auth/refresh") ||
           requestUrl.includes("/api/auth/login") ||
           requestUrl.includes("/api/auth/verify");
 
-        // Never try to refresh on auth endpoints themselves
         if (isAuthEndpoint) {
           return Promise.reject(error);
         }
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !config._retry) {
           if (this.isRefreshing) {
-            // If already refreshing, queue the request
-            return new Promise((resolve, reject) => {
+            return new Promise<string>((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
-            }).then((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              return this.client(originalRequest);
-            }).catch((err) => {
-              return Promise.reject(err);
-            });
+            })
+              .then((token) => {
+                config.headers = config.headers ?? {};
+                config.headers.Authorization = `Bearer ${token}`;
+                return this.client(config);
+              })
+              .catch((queueError) => Promise.reject(queueError));
           }
 
-          originalRequest._retry = true;
+          config._retry = true;
           this.isRefreshing = true;
 
           try {
@@ -82,26 +97,22 @@ class ApiClient {
 
             const { access_token, refresh_token: newRefreshToken } = response.data;
 
-            // Update tokens in localStorage
             localStorage.setItem("access_token", access_token);
             localStorage.setItem("refresh_token", newRefreshToken);
 
-            // Process queued requests
             this.failedQueue.forEach(({ resolve }) => resolve(access_token));
             this.failedQueue = [];
 
-            // Retry original request
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-            return this.client(originalRequest);
+            config.headers = config.headers ?? {};
+            config.headers.Authorization = `Bearer ${access_token}`;
+            return this.client(config);
           } catch (refreshError) {
-            // Refresh failed, clear tokens and redirect to login
             this.failedQueue.forEach(({ reject }) => reject(refreshError));
             this.failedQueue = [];
 
             localStorage.removeItem("access_token");
             localStorage.removeItem("refresh_token");
 
-            // Redirect to login page
             if (typeof window !== "undefined") {
               window.location.href = "/login";
             }
@@ -117,28 +128,26 @@ class ApiClient {
     );
   }
 
-  // Convenience methods
-  get<T = any>(url: string, config?: any) {
+  get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.get<T>(url, config);
   }
 
-  post<T = any>(url: string, data?: any, config?: any) {
+  post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.post<T>(url, data, config);
   }
 
-  put<T = any>(url: string, data?: any, config?: any) {
+  put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.put<T>(url, data, config);
   }
 
-  patch<T = any>(url: string, data?: any, config?: any) {
+  patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.patch<T>(url, data, config);
   }
 
-  delete<T = any>(url: string, config?: any) {
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.delete<T>(url, config);
   }
 
-  // Get the underlying axios instance for advanced usage
   getInstance(): AxiosInstance {
     return this.client;
   }
