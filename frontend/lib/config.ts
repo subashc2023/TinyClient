@@ -44,7 +44,10 @@ export function getFrontendBaseUrl(): string {
 }
 
 export function getDocsUrl(): string {
-  return `${getApiBaseUrl()}/docs`;
+  const apiBaseUrl = getApiBaseUrl();
+  const docsUrl = `${apiBaseUrl}/docs`;
+  console.log(`🔧 getDocsUrl() - apiBaseUrl: ${apiBaseUrl}, docsUrl: ${docsUrl}`);
+  return docsUrl;
 }
 
 function normalizeFlag(value: string | undefined | null): string {
