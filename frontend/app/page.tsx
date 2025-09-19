@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { allowSignup, getProjectName } from "@/lib/config";
 import { Layout, Server, Lock, PlugZap, Zap, Terminal } from "lucide-react";
+import Image from "next/image";
 import * as React from "react";
 
 export default function Home() {
@@ -48,8 +49,22 @@ export default function Home() {
               <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
                 <span className="mr-2">{firstWord}</span>
                 <span className="mx-1 inline-block align-[.18em] relative top-[12px] left-[3px]">
-                  <img src="/mcplight.png" alt="MCP" className="inline-block h-[1em] w-auto dark:hidden" />
-                  <img src="/mcp.png" alt="MCP" className="hidden h-[1em] w-auto dark:inline-block" />
+                  <Image
+                    src="/mcplight.png"
+                    alt="MCP"
+                    width={60}
+                    height={60}
+                    className="inline-block dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/mcp.png"
+                    alt="MCP"
+                    width={60}
+                    height={60}
+                    className="hidden dark:inline-block"
+                    priority
+                  />
                 </span>
                 {remainingWords && <span className="ml-2">{remainingWords}</span>}
               </h1>

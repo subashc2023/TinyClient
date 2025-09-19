@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, Suspense } from "react";
 import {
@@ -194,8 +195,22 @@ function LoginPageContent() {
             <header className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <img src="/mcplight.png" alt={`${projectName} logo light`} className="block h-9 w-auto dark:hidden" />
-                  <img src="/mcp.png" alt={`${projectName} logo dark`} className="hidden h-9 w-auto dark:block" />
+                  <Image
+                    src="/mcplight.png"
+                    alt={`${projectName} logo light`}
+                    width={36}
+                    height={36}
+                    className="block dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/mcp.png"
+                    alt={`${projectName} logo dark`}
+                    width={36}
+                    height={36}
+                    className="hidden dark:block"
+                    priority
+                  />
                   <span className="ml-2 text-xl font-semibold">{projectName}</span>
                 </div>
 
