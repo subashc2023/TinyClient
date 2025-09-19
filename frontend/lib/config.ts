@@ -12,15 +12,7 @@ function buildUrl(domain: string, protocol: string, port: string): string {
 }
 
 export function getApiBaseUrl(): string {
-  // Check for explicit API base URL first (backward compatibility)
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    const raw = process.env.NEXT_PUBLIC_API_BASE_URL;
-    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
-    console.log(`🔧 Using explicit NEXT_PUBLIC_API_BASE_URL: ${withProtocol}`);
-    return withProtocol;
-  }
-
-  // Build from unified config
+  // Build from unified config only
   const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost";
   const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
   const port = process.env.NEXT_PUBLIC_BACKEND_PORT || "8001";
@@ -32,12 +24,7 @@ export function getApiBaseUrl(): string {
 }
 
 export function getFrontendBaseUrl(): string {
-  // Check for explicit frontend base URL first (backward compatibility)
-  if (process.env.NEXT_PUBLIC_FRONTEND_BASE_URL) {
-    return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL;
-  }
-
-  // Build from unified config
+  // Build from unified config only
   const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost";
   const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
   const port = process.env.NEXT_PUBLIC_FRONTEND_PORT || "3000";

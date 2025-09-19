@@ -28,8 +28,8 @@
 ### Backend (Port 8001)
 - **FastAPI** with automatic OpenAPI docs
 - **SQLite** database with SQLAlchemy ORM
-- **JWT authentication** with access/refresh token pattern
-- **CORS enabled** for development
+- **JWT authentication** with access/refresh token pattern (cookies supported)
+- **CORS tightened** to frontend/backend origins; credentials allowed by default
 
 ## 🚀 Quick Start
 
@@ -98,78 +98,39 @@ uv run python -m app.setup downgrade   # rollback one revision
 uv run python -m app.main              # run FastAPI
 ```
 
+### Security & Auth Notes
+
+- `JWT_SECRET_KEY` must be set (non-empty). The API refuses to start without it.
+- Refresh tokens are hashed in the DB and rotated; `token_version` increments on logout/password/email/status changes to invalidate sessions.
+- On login/refresh, the API sets cookies: `refresh_token` (HttpOnly) and `access_token` (non-HttpOnly). Clients may also use `Authorization: Bearer <access>`.
+- `/api/auth/verify` accepts either header or cookies and returns the current user.
+- Frontend Axios is `withCredentials: true` and only logs unexpected 5xx errors.
+
+### CORS & Logging
+
+Backend limits CORS to computed frontend/backend origins and supports credentials. You can add extra origins and tweak logging via env:
+
+```env
+# Extra comma-separated origins in addition to computed ones
+EXTRA_ALLOWED_ORIGINS=
+
+# Logging
+LOG_ONLY_API_PATHS=true   # only log /api/* (default true)
+SKIP_OPTIONS_LOGS=true    # skip OPTIONS preflights (default true)
+```
+
 ### Default Users
 
 After seeding, you can log in with:
 
-- **👑 Admin**: `admin@example.com` / `admin123`
-- **👤 User**: `user@example.com` / `user123`
+- Admin: `admin@example.com` / `admin123`
+- User: `user@example.com` / `user123`
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-When using Docker Compose, the root `.env` file is loaded for both services. Make sure any public flags such as `NEXT_PUBLIC_ALLOW_SIGNUP` are present (these are already included by default).
-
-#### For Deployment 🚀
-
-The simplest way to configure both frontend and backend for deployment is using the unified domain configuration:
-
-```env
-# Branding
-PROJECT_NAME=TinyClient
-NEXT_PUBLIC_PROJECT_NAME=TinyClient
-
-# Application URLs - unified configuration for deployment
-APP_DOMAIN=your-server-ip-or-domain.com
-APP_PROTOCOL=http
-FRONTEND_PORT=3000
-BACKEND_PORT=8001
-
-# Next.js public variables (auto-built from APP_* if not set)
-NEXT_PUBLIC_APP_DOMAIN=your-server-ip-or-domain.com
-NEXT_PUBLIC_APP_PROTOCOL=http
-NEXT_PUBLIC_FRONTEND_PORT=3000
-NEXT_PUBLIC_BACKEND_PORT=8001
-
-# Database
-DATABASE_URL=sqlite:///./tinyclient.db
-
-# JWT Configuration
-JWT_SECRET_KEY=your-secret-key-here
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# Signup & invitations
-ALLOW_SIGNUP=true
-EMAIL_VERIFICATION_EXPIRATION_HOURS=24
-INVITE_EXPIRATION_HOURS=24
-NEXT_PUBLIC_ALLOW_SIGNUP=true
-
-# Resend email settings
-RESEND_API_KEY=your-resend-api-key
-RESEND_FROM_EMAIL=noreply@example.com
-RESEND_FROM_NAME=TinyClient
-
-# Initial users (for database seeding)
-ADMIN_USERNAME=admin
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=changeMe123!
-USER_USERNAME=user
-USER_EMAIL=user@example.com
-USER_PASSWORD=changeMe123!
-```
-
-#### Legacy Configuration (still supported)
-
-For backward compatibility, you can still set URLs directly:
-```env
-FRONTEND_BASE_URL=http://localhost:3000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
-```
-
-The system will use the unified `APP_*` variables to build URLs if the legacy ones aren't set.
+Copy `.env.example` to `.env` and adjust values as needed. This project uses unified `APP_*` and `NEXT_PUBLIC_*` variables for both services; legacy variables are no longer supported.
 
 
 
