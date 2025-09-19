@@ -15,26 +15,11 @@ export default function Home() {
     <>
       {/* Hero */}
       <section className="relative">
-        {/* Multi-layered background glow for depth and smoothness */}
+        {/* Simple subtle background */}
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 -z-10"
-        >
-          {/* Large outer glow - very subtle */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-3/4 w-full max-w-6xl rounded-[50%] bg-[color-mix(in_oklch,var(--color-primary),transparent_95%)] blur-[120px]" />
-          </div>
-          {/* Medium inner glow */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-2/5 w-4/5 max-w-4xl rounded-[50%] bg-[color-mix(in_oklch,var(--color-primary),transparent_85%)] blur-[80px]" />
-          </div>
-          {/* Small core glow */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-1/4 w-3/5 max-w-2xl rounded-[50%] bg-[color-mix(in_oklch,var(--color-primary),transparent_75%)] blur-[60px]" />
-          </div>
-          {/* Anti-banding noise overlay */}
-          <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.035] [background-image:url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZmlsdGVyIGlkPSJub2lzZSI+CiAgICA8ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC45IiBudW1PY3RhdmVzPSI0IiBzZWVkPSIxIi8+CiAgICA8ZmVDb2xvck1hdHJpeCBpbj0iVHVyYnVsZW5jZSIgdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPgogIDwvZmlsdGVyPgogIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNub2lzZSkiLz4KPC9zdmc+')] [background-size:128px_128px]" />
-        </div>
+          className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-muted/30"
+        />
 
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid min-h-[calc(100vh-3.5rem)] place-items-center py-12 md:py-20">

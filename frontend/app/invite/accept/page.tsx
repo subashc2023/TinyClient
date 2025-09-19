@@ -120,8 +120,7 @@ function InviteAcceptPageContent() {
 
   return (
     <div className="relative flex flex-1 min-h-full items-center justify-center overflow-hidden bg-background px-4 py-12">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(16,185,129,0.14),_transparent_60%)]" />
-      <div className="absolute inset-0 opacity-[0.09] dark:opacity-[0.15] [background-image:url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZmlsdGVyIGlkPSJub2lzZSI+CiAgICA8ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC45IiBudW1PY3RhdmVzPSI0IiBzZWVkPSIxIi8+CiAgICA8ZmVDb2xvck1hdHJpeCBpbj0iVHVyYnVsZW5jZSIgdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPgogIDwvZmlsdGVyPgogIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNub2lzZSkiLz4KPC9zdmc+')]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="grid gap-8 rounded-[34px] border border-border/60 bg-background/70 p-6 shadow-2xl backdrop-blur xl:grid-cols-[420px_minmax(0,1fr)] xl:p-10">
