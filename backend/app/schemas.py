@@ -107,3 +107,12 @@ class InviteAcceptRequest(BaseModel):
     token: str
     username: str = Field(..., min_length=3, max_length=100)
     password: str = Field(..., min_length=8)
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)

@@ -1,13 +1,13 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Response
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import EmailVerification, User, UserInvite
+from ..models import EmailVerification, User, UserInvite, PasswordReset
 from ..schemas import (
     EmailVerificationRequest,
     InviteAcceptRequest,
@@ -20,18 +20,21 @@ from ..schemas import (
     UserLogin,
     UserResponse,
     UserSignupRequest,
+    PasswordResetRequest,
+    PasswordResetConfirm,
 )
 from ..security import (
     EMAIL_NOT_VERIFIED_EXCEPTION,
     INACTIVE_ACCOUNT_EXCEPTION,
     create_token_pair,
+    compute_refresh_token_hash,
     get_current_user,
     hash_password,
     security,
     verify_password,
     verify_token,
 )
-from ..services.email import send_verification_email
+from ..services.email import send_verification_email, send_password_reset_email
 from ..utils.tokens import generate_token_with_hash, hash_token
 from ..utils.config import get_frontend_base_url
 
@@ -39,6 +42,7 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 ALLOW_SIGNUP = os.getenv("ALLOW_SIGNUP", "false").strip().lower() in {"1", "true", "yes", "on"}
 EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
+PASSWORD_RESET_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_EXPIRATION_HOURS", "2"))
 
 
 def _normalize_email(value: str) -> str:
@@ -98,21 +102,22 @@ async def signup(
 @router.post("/login", response_model=LoginResponse)
 async def login(
     user_credentials: UserLogin,
+    response: Response,
     db: Session = Depends(get_db),
 ):
     email_or_username = user_credentials.email_or_username
-    print(f"🔍 Login attempt for: '{email_or_username}'")
+    print(f"Login attempt for: '{email_or_username}'")
 
     if "@" in email_or_username:
-        print(f"🔍 Searching by email: '{email_or_username.lower()}'")
+        print(f"Searching by email: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.email) == email_or_username.lower()).first()
     else:
-        print(f"🔍 Searching by username: '{email_or_username.lower()}'")
+        print(f"Searching by username: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.username) == email_or_username.lower()).first()
 
-    print(f"🔍 User found: {user is not None}")
+    print(f"User found: {user is not None}")
     if user:
-        print(f"🔍 User details: email={user.email}, username={user.username}, active={user.is_active}, verified={user.is_verified}")
+        print(f"User details: email={user.email}, username={user.username}, active={user.is_active}, verified={user.is_verified}")
 
     if not user:
         raise HTTPException(
@@ -136,8 +141,28 @@ async def login(
 
     access_token, refresh_token = create_token_pair(user.id, user.username)
 
-    user.refresh_token = refresh_token
+    # Store only the hash and initialize/maintain token version
+    user.refresh_token_hash = compute_refresh_token_hash(refresh_token)
+    user.token_version = user.token_version or 0
     db.commit()
+
+    # Also set cookies for clients preferring cookie auth
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=False,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
 
     return LoginResponse(
         user=UserResponse.from_orm(user),
@@ -151,6 +176,7 @@ async def login(
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
+    response: Response,
     db: Session = Depends(get_db),
 ):
     payload = verify_token(refresh_request.refresh_token, expected_type="refresh")
@@ -179,7 +205,8 @@ async def refresh_token(
         )
 
     user = db.query(User).filter(User.id == user_id).first()
-    if not user or user.refresh_token != refresh_request.refresh_token:
+    expected_hash = compute_refresh_token_hash(refresh_request.refresh_token)
+    if not user or user.refresh_token_hash != expected_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
@@ -194,8 +221,28 @@ async def refresh_token(
 
     access_token, new_refresh_token = create_token_pair(user.id, user.username)
 
-    user.refresh_token = new_refresh_token
+    # Rotate hash and bump version to invalidate older chains if desired
+    user.refresh_token_hash = compute_refresh_token_hash(new_refresh_token)
+    user.token_version = (user.token_version or 0)
     db.commit()
+
+    # Set rotated cookies
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=False,
+        secure=False,
+        samesite="lax",
+        path="/",
+    )
 
     return Token(
         access_token=access_token,
@@ -205,12 +252,17 @@ async def refresh_token(
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
+    response: Response,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     current_user.refresh_token = None
+    current_user.refresh_token_hash = None
+    current_user.token_version = (current_user.token_version or 0) + 1
     db.commit()
 
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
     return MessageResponse(message="Successfully logged out")
 
 
@@ -223,51 +275,9 @@ async def get_current_user_info(
 
 @router.get("/verify", response_model=TokenVerifyResponse)
 async def verify_access_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    token = credentials.credentials
-    payload = verify_token(token, expected_type="access")
-
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id = payload.get("sub")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        user_id = int(user_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_active:
-        raise INACTIVE_ACCOUNT_EXCEPTION
-
-    if not user.is_verified:
-        raise EMAIL_NOT_VERIFIED_EXCEPTION
-
-    return TokenVerifyResponse(valid=True, user=UserResponse.from_orm(user))
+    return TokenVerifyResponse(valid=True, user=UserResponse.from_orm(current_user))
 
 
 @router.post("/verify-email", response_model=MessageResponse)
@@ -299,6 +309,72 @@ async def verify_email(
     db.commit()
 
     return MessageResponse(message="Email verified successfully. You can now log in.")
+
+
+@router.post("/password/reset", response_model=MessageResponse)
+async def request_password_reset(
+    payload: PasswordResetRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    email = _normalize_email(payload.email)
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+
+    # Do not reveal whether email exists
+    if user:
+        token, token_hash, expires_at = generate_token_with_hash(
+            timedelta(hours=PASSWORD_RESET_EXPIRATION_HOURS)
+        )
+        reset = PasswordReset(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        db.add(reset)
+        db.commit()
+
+        reset_link = f"{get_frontend_base_url().rstrip('/')}/verify?reset_token={token}"
+        background_tasks.add_task(
+            send_password_reset_email,
+            email=user.email,
+            reset_link=reset_link,
+        )
+
+    return MessageResponse(message="If an account exists for that email, a reset link has been sent.")
+
+
+@router.post("/password/reset/confirm", response_model=MessageResponse)
+async def confirm_password_reset(
+    payload: PasswordResetConfirm,
+    db: Session = Depends(get_db),
+):
+    token_hash = hash_token(payload.token)
+    reset = db.query(PasswordReset).filter(PasswordReset.token_hash == token_hash).first()
+
+    if reset is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+
+    if reset.used_at is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token already used")
+
+    now = datetime.now(timezone.utc)
+    if reset.expires_at < now:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
+
+    user = db.query(User).filter(User.id == reset.user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Set new password and invalidate refresh tokens
+    user.password_hash = hash_password(payload.new_password)
+    user.refresh_token = None
+    user.refresh_token_hash = None
+    user.token_version = (user.token_version or 0) + 1
+
+    reset.used_at = now
+    db.commit()
+
+    return MessageResponse(message="Password has been reset. You can now sign in.")
 
 
 @router.get("/invite/{token}", response_model=InviteDetailResponse)

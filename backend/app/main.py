@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import time
 
 from .routers import auth, users
+from .utils.config import get_allowed_cors_origins
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,24 +25,44 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+allowed_origins = get_allowed_cors_origins()
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# Request logging configuration
+LOG_ONLY_API_PATHS = os.getenv("LOG_ONLY_API_PATHS", "true").strip().lower() in {"1", "true", "yes", "on"}
+SKIP_OPTIONS_LOGS = os.getenv("SKIP_OPTIONS_LOGS", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 # Add request logging middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    logger.info(f"🚀 {request.method} {request.url.path} from {request.client.host if request.client else 'unknown'}")
+    client_ip = request.headers.get("x-forwarded-for") or (request.client.host if request.client else "unknown")
+
+    # Optionally restrict to API paths and skip OPTIONS preflight logs
+    path = request.url.path or "/"
+    method = request.method.upper()
+    should_log = True
+    if LOG_ONLY_API_PATHS and not path.startswith("/api/"):
+        should_log = False
+    if SKIP_OPTIONS_LOGS and method == "OPTIONS":
+        should_log = False
+
+    if should_log:
+        logger.info(f"{method} {path} from {client_ip}")
 
     response = await call_next(request)
 
     process_time = time.time() - start_time
-    logger.info(f"✅ {request.method} {request.url.path} -> {response.status_code} ({process_time:.3f}s)")
+    if should_log:
+        logger.info(f"{method} {path} -> {response.status_code} ({process_time:.3f}s)")
 
     return response
 

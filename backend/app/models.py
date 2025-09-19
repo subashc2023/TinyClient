@@ -16,7 +16,11 @@ class User(Base):
     is_admin = Column(Boolean, default=False, nullable=False, server_default=sa.false())
     is_active = Column(Boolean, default=True, nullable=False, server_default=sa.true())
     is_verified = Column(Boolean, default=False, nullable=False, server_default=sa.false())
+    # Deprecated: refresh_token stored in plaintext (kept for backward compatibility during migration)
     refresh_token = Column(Text, nullable=True)
+    # New: store only refresh token hash and a version number for invalidation
+    refresh_token_hash = Column(Text, nullable=True)
+    token_version = Column(Integer, nullable=False, server_default=sa.text("0"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -71,7 +75,16 @@ class UserInvite(Base):
         foreign_keys=[invited_by_user_id],
         back_populates="invites_sent",
     )
-    accepted_user = relationship(
-        "User",
-        foreign_keys=[accepted_user_id],
-    )
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(255), unique=True, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

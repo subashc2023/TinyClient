@@ -36,6 +36,7 @@ class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true,
     });
 
     this.setupInterceptors();
@@ -52,43 +53,44 @@ class ApiClient {
         }
 
         // Log API requests
-        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         if (config.data && config.method !== 'get') {
-          console.log('📤 Request data:', config.data);
+          console.log('Request data:', config.data);
         }
 
         return config;
       },
       (error) => {
-        console.error('❌ Request error:', error);
+        console.error('Request error:', error);
         return Promise.reject(error);
       }
     );
 
     this.client.interceptors.response.use(
-      (response) => {
-        // Log successful responses
-        console.log(`✅ API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
-        return response;
-      },
+      (response) => response,
       async (error: AxiosError) => {
-        // Log error responses
-        console.error(`❌ API Error: ${error.response?.status || 'No response'} ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
-        if (error.response?.data) {
-          console.error('📥 Error data:', error.response.data);
-        }
         const config = error.config as RetryableRequestConfig | undefined;
-        if (!config) {
-          return Promise.reject(error);
-        }
-
-        const requestUrl = config.url ?? "";
+        const status = error.response?.status;
+        const requestUrl = (config?.url ?? "");
         const isAuthEndpoint =
           requestUrl.includes("/api/auth/refresh") ||
           requestUrl.includes("/api/auth/login") ||
           requestUrl.includes("/api/auth/verify");
 
+        // Suppress noisy logs for expected auth failures (e.g., no session yet)
+        // Only log unexpected 5xx errors
+        if (status && status >= 500) {
+          console.error(`API Error: ${status} ${config?.method?.toUpperCase()} ${config?.url}`);
+          if (error.response?.data) {
+            console.error('Error data:', error.response.data);
+          }
+        }
+
         if (isAuthEndpoint) {
+          return Promise.reject(error);
+        }
+
+        if (!config) {
           return Promise.reject(error);
         }
 

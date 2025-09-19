@@ -175,3 +175,17 @@ def send_invite_email(*, email: str, invite_link: str, invited_by: Optional[str]
         html=rendered.html,
         text=rendered.text,
     )
+
+
+def send_password_reset_email(*, email: str, reset_link: str) -> None:
+    rendered = _render_template(
+        "password_reset_email",
+        reset_link=reset_link,
+    )
+
+    _send_email(
+        email,
+        subject=rendered.subject or f"{PROJECT_NAME} notification",
+        html=rendered.html,
+        text=rendered.text,
+    )

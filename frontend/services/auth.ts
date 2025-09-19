@@ -24,9 +24,8 @@ export async function signupService(email: string, username: string, password: s
 }
 
 export async function verifyService(accessToken: string): Promise<TokenVerifyResponse> {
-  const res = await apiClient.get<TokenVerifyResponse>("/api/auth/verify", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+  const res = await apiClient.get<TokenVerifyResponse>("/api/auth/verify", { headers });
   return res.data;
 }
 
@@ -39,6 +38,16 @@ export async function logoutService(accessToken: string): Promise<MessageRespons
 
 export async function verifyEmailService(token: string): Promise<MessageResponse> {
   const res = await apiClient.post<MessageResponse>("/api/auth/verify-email", { token });
+  return res.data;
+}
+
+export async function requestPasswordReset(email: string): Promise<MessageResponse> {
+  const res = await apiClient.post<MessageResponse>("/api/auth/password/reset", { email });
+  return res.data;
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<MessageResponse> {
+  const res = await apiClient.post<MessageResponse>("/api/auth/password/reset/confirm", { token, new_password: newPassword });
   return res.data;
 }
 

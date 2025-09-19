@@ -25,13 +25,13 @@ function VerifyPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [message, setMessage] = useState<string>("Verifying your email...");
+  const [message, setMessage] = useState<string>("Verifying...");
 
   useEffect(() => {
     const token = searchParams.get("token");
     if (!token) {
       setStatus("error");
-      setMessage("Missing verification token. Please use the link from your email.");
+      setMessage("Missing token. Please use the link from your email.");
       return;
     }
 
@@ -43,7 +43,7 @@ function VerifyPageContent() {
         setMessage(response.message);
       } catch (err) {
         setStatus("error");
-        setMessage(resolveErrorMessage(err, "Verification failed."));
+        setMessage(resolveErrorMessage(err, "Operation failed."));
       }
     };
 

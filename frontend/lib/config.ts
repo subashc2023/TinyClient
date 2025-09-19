@@ -14,8 +14,10 @@ function buildUrl(domain: string, protocol: string, port: string): string {
 export function getApiBaseUrl(): string {
   // Check for explicit API base URL first (backward compatibility)
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    console.log(`🔧 Using explicit NEXT_PUBLIC_API_BASE_URL: ${process.env.NEXT_PUBLIC_API_BASE_URL}`);
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
+    const raw = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
+    console.log(`🔧 Using explicit NEXT_PUBLIC_API_BASE_URL: ${withProtocol}`);
+    return withProtocol;
   }
 
   // Build from unified config

@@ -49,9 +49,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedToken) {
       setToken(savedToken);
       void verifyToken(savedToken);
-    } else {
-      setIsLoading(false);
+      return;
     }
+    // Try cookie-based session: call verify without header; backend will read cookie
+    (async () => {
+      try {
+        const data = await verifyService("");
+        setUser(data.user);
+        setToken(null);
+      } catch {
+        // ignore
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   const verifyToken = async (accessToken: string) => {

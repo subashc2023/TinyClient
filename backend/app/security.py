@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -12,16 +12,22 @@ from sqlalchemy.orm import Session
 
 from .database import get_db
 from .models import User
+from .utils.tokens import hash_token
 
 load_dotenv()
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "").strip()
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
+if not JWT_SECRET_KEY:
+    raise RuntimeError(
+        "JWT_SECRET_KEY is not set. Please configure a non-empty secret in your environment (.env)."
+    )
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 INACTIVE_ACCOUNT_EXCEPTION = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
@@ -83,19 +89,35 @@ def create_token_pair(user_id: int, username: str) -> tuple[str, str]:
     return access_token, refresh_token
 
 
+def compute_refresh_token_hash(refresh_token: str) -> str:
+    """Return a stable hash for the refresh token for DB storage."""
+    return hash_token(refresh_token)
+
+
 def _resolve_user(user_id: int, db: Session) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
 
 
+def _extract_bearer_or_cookie_token(request: Request, credentials: Optional[HTTPAuthorizationCredentials]) -> Optional[str]:
+    if credentials and credentials.credentials:
+        return credentials.credentials
+    cookie_token = request.cookies.get("access_token")
+    if cookie_token:
+        return cookie_token
+    return None
+
+
 def get_current_user_optional(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db),
 ) -> Optional[User]:
     """Return the authenticated user if the token is valid; otherwise ``None``."""
-    if not credentials:
+    token = _extract_bearer_or_cookie_token(request, credentials)
+    if not token:
         return None
 
-    payload = verify_token(credentials.credentials, expected_type="access")
+    payload = verify_token(token, expected_type="access")
     if payload is None:
         return None
 
@@ -116,11 +138,20 @@ def get_current_user_optional(
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
     """Retrieve the authenticated user or raise an authorization error."""
-    payload = verify_token(credentials.credentials, expected_type="access")
+    token = _extract_bearer_or_cookie_token(request, credentials)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = verify_token(token, expected_type="access")
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -81,6 +81,8 @@ async def update_me(
         current_user.email = email
         current_user.is_verified = False
         current_user.refresh_token = None
+        current_user.refresh_token_hash = None
+        current_user.token_version = (current_user.token_version or 0) + 1
 
         token, token_hash, expires_at = generate_token_with_hash(
             timedelta(hours=EMAIL_VERIFICATION_EXPIRATION_HOURS)
@@ -119,6 +121,8 @@ async def update_password(
 
     current_user.password_hash = hash_password(payload.new_password)
     current_user.refresh_token = None
+    current_user.refresh_token_hash = None
+    current_user.token_version = (current_user.token_version or 0) + 1
     db.commit()
 
     return MessageResponse(message="Password updated successfully. Please sign in again.")
@@ -141,6 +145,8 @@ async def update_user_status(
     target_user.is_active = payload.is_active
     if not payload.is_active:
         target_user.refresh_token = None
+        target_user.refresh_token_hash = None
+        target_user.token_version = (target_user.token_version or 0) + 1
 
     db.commit()
     db.refresh(target_user)
