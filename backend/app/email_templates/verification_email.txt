@@ -18,4 +18,4 @@ changes will be made.
 
 --------------------------------------------------------------------------------
 
-Made with ?? + ? for Model Context Protocol explorers everywhere.
+Made with gears and coffee for Model Context Protocol explorers everywhere.

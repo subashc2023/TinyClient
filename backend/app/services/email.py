@@ -156,7 +156,7 @@ def send_verification_email(*, email: str, verification_link: str) -> None:
 
     _send_email(
         email,
-        subject=rendered.subject,
+        subject=rendered.subject or f"{PROJECT_NAME} notification",
         html=rendered.html,
         text=rendered.text,
     )
@@ -171,7 +171,7 @@ def send_invite_email(*, email: str, invite_link: str, invited_by: Optional[str]
 
     _send_email(
         email,
-        subject=rendered.subject,
+        subject=rendered.subject or f"{PROJECT_NAME} notification",
         html=rendered.html,
         text=rendered.text,
     )
