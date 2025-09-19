@@ -21,7 +21,7 @@ import { PasswordChecklist } from "@/components/password-checklist";
 import { useAuth } from "@/lib/auth-context";
 import { ROUTES } from "@/lib/routes";
 import { useRouteOverlay } from "@/lib/route-overlay-context";
-import { signupService } from "@/services/auth";
+import { signupService, resendVerificationEmail } from "@/services/auth";
 import { allowSignup, getProjectName } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +82,8 @@ function LoginPageContent() {
   const [signupPasswordConfirm, setSignupPasswordConfirm] = useState("");
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     setMode(modeFromParams);
@@ -173,6 +175,24 @@ function LoginPageContent() {
     } finally {
       setIsSubmitting(false);
       setActiveSubmit(null);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendMessage(null);
+    setResendLoading(true);
+    try {
+      const identifier = signupEmail || signupUsername;
+      if (!identifier) {
+        setResendMessage("Enter your email or username first.");
+        return;
+      }
+      const res = await resendVerificationEmail(identifier.trim());
+      setResendMessage(res.message);
+    } catch (error) {
+      setResendMessage(extractErrorMessage(error, "Unable to resend verification email."));
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -350,16 +370,7 @@ function LoginPageContent() {
                     </div>
                   )}
 
-                  {signupSuccess && (
-                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                      <div className="flex">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                        <div className="ml-3">
-                          <p className="text-sm text-emerald-500">{signupSuccess}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {signupSuccess && null}
 
                   <div className="space-y-2">
                     <label htmlFor="signup-email" className="text-sm font-medium">
@@ -535,6 +546,23 @@ function LoginPageContent() {
                     <span>After confirming, sign in to explore the workspace and invite teammates.</span>
                   </li>
                 </ol>
+                {signupSuccess && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                    <div className="flex">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      <div className="ml-3">
+                        <p className="text-sm text-emerald-500">{signupSuccess}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">If you don’t see it, check your spam folder.</p>
+                        <div className="mt-2 flex items-center gap-3">
+                          <Button type="button" variant="outline" size="sm" onClick={handleResendVerification} disabled={resendLoading}>
+                            {resendLoading ? "Resending..." : "Resend verification"}
+                          </Button>
+                          {resendMessage && <span className="text-xs">{resendMessage}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

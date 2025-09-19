@@ -28,6 +28,7 @@ from ..security import (
     INACTIVE_ACCOUNT_EXCEPTION,
     create_token_pair,
     compute_refresh_token_hash,
+    validate_password_policy,
     get_current_user,
     hash_password,
     security,
@@ -43,10 +44,18 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 ALLOW_SIGNUP = os.getenv("ALLOW_SIGNUP", "false").strip().lower() in {"1", "true", "yes", "on"}
 EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 PASSWORD_RESET_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_EXPIRATION_HOURS", "2"))
+EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 
 
 def _normalize_email(value: str) -> str:
     return value.strip().lower()
+
+
+def _ensure_aware(dt: datetime) -> datetime:
+    """Ensure a datetime is timezone-aware (assume UTC if naive)."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 @router.post("/signup", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -70,6 +79,9 @@ async def signup(
     existing_username = db.query(User).filter(func.lower(User.username) == payload.username.lower()).first()
     if existing_username:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already in use")
+
+    # Enforce backend password policy
+    validate_password_policy(payload.password)
 
     new_user = User(
         email=email,
@@ -299,7 +311,8 @@ async def verify_email(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token already used")
 
     now = datetime.now(timezone.utc)
-    if verification.expires_at < now:
+    expires_at = _ensure_aware(verification.expires_at)
+    if expires_at < now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
 
     user = verification.user
@@ -309,6 +322,43 @@ async def verify_email(
     db.commit()
 
     return MessageResponse(message="Email verified successfully. You can now log in.")
+
+
+@router.post("/verify-email/resend", response_model=MessageResponse)
+async def resend_verification_email(
+    payload: UserLogin,  # reuse email_or_username field
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    identifier = payload.email_or_username.strip()
+    if "@" in identifier:
+        user = db.query(User).filter(func.lower(User.email) == identifier.lower()).first()
+    else:
+        user = db.query(User).filter(func.lower(User.username) == identifier.lower()).first()
+
+    # Always return success to avoid user enumeration
+    if not user:
+        return MessageResponse(message="If an account exists, a verification email has been resent.")
+
+    if user.is_verified:
+        return MessageResponse(message="Your email is already verified.")
+
+    # Create a fresh verification token
+    token, token_hash, expires_at = generate_token_with_hash(
+        timedelta(hours=EMAIL_VERIFICATION_EXPIRATION_HOURS)
+    )
+    verification = EmailVerification(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    db.add(verification)
+    db.commit()
+
+    verification_link = f"{get_frontend_base_url().rstrip('/')}/verify?token={token}"
+    background_tasks.add_task(send_verification_email, email=user.email, verification_link=verification_link)
+
+    return MessageResponse(message="If an account exists, a verification email has been resent.")
 
 
 @router.post("/password/reset", response_model=MessageResponse)
@@ -366,6 +416,7 @@ async def confirm_password_reset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Set new password and invalidate refresh tokens
+    validate_password_policy(payload.new_password)
     user.password_hash = hash_password(payload.new_password)
     user.refresh_token = None
     user.refresh_token_hash = None
@@ -397,7 +448,8 @@ async def get_invite_details(
     if invite.accepted_at is not None:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation already accepted")
 
-    if invite.expires_at < now:
+    expires_at = _ensure_aware(invite.expires_at)
+    if expires_at < now:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation expired")
 
     return InviteDetailResponse(
@@ -426,7 +478,8 @@ async def accept_invite(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already accepted")
 
     now = datetime.now(timezone.utc)
-    if invite.expires_at < now:
+    expires_at = _ensure_aware(invite.expires_at)
+    if expires_at < now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation expired")
 
     existing_user = db.query(User).filter(func.lower(User.email) == invite.email.lower()).first()

@@ -94,6 +94,51 @@ def compute_refresh_token_hash(refresh_token: str) -> str:
     return hash_token(refresh_token)
 
 
+def _as_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+# Password policy configuration (env-driven)
+PASSWORD_MIN_LENGTH = int(os.getenv("PASSWORD_MIN_LENGTH", "12"))
+PASSWORD_REQUIRE_LOWER = _as_bool(os.getenv("PASSWORD_REQUIRE_LOWER"), True)
+PASSWORD_REQUIRE_UPPER = _as_bool(os.getenv("PASSWORD_REQUIRE_UPPER"), True)
+PASSWORD_REQUIRE_DIGIT = _as_bool(os.getenv("PASSWORD_REQUIRE_DIGIT"), True)
+PASSWORD_REQUIRE_SYMBOL = _as_bool(os.getenv("PASSWORD_REQUIRE_SYMBOL"), True)
+
+
+def validate_password_policy(password: str) -> None:
+    """Enforce backend password policy (env-configurable)."""
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must be at least {PASSWORD_MIN_LENGTH} characters long",
+        )
+
+    has_lower = any(c.islower() for c in password)
+    has_upper = any(c.isupper() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_symbol = any(not c.isalnum() for c in password)
+
+    missing: list[str] = []
+    if PASSWORD_REQUIRE_LOWER and not has_lower:
+        missing.append("lowercase letter")
+    if PASSWORD_REQUIRE_UPPER and not has_upper:
+        missing.append("uppercase letter")
+    if PASSWORD_REQUIRE_DIGIT and not has_digit:
+        missing.append("digit")
+    if PASSWORD_REQUIRE_SYMBOL and not has_symbol:
+        missing.append("symbol")
+
+    if missing:
+        missing_text = ", ".join(missing)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must include: {missing_text}",
+        )
+
+
 def _resolve_user(user_id: int, db: Session) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
 

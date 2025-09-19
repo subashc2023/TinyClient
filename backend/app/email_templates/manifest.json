@@ -8,5 +8,10 @@
     "subject": "You're invited to TinyClient",
     "html": "invite_email.html",
     "text": "invite_email.txt"
+  },
+  "password_reset_email": {
+    "subject": "TinyClient password reset",
+    "html": "password_reset_email.html",
+    "text": "password_reset_email.txt"
   }
 }

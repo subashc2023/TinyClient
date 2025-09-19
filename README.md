@@ -19,21 +19,18 @@
 
 ## 🏗️ Architecture
 
-### Frontend (Port 3000)
-- **Next.js 15** with App Router and React 19
-- **Tailwind v4** for styling with custom CSS-in-JS
-- **ShadCN UI** components for consistent design
-- **Automatic token refresh** for seamless auth experience
+### Frontend (3000)
+- Next.js 15 (App Router, React 19), Tailwind v4, ShadCN UI
+- Axios with credentials; auto-refresh; cookie or header auth
 
-### Backend (Port 8001)
-- **FastAPI** with automatic OpenAPI docs
-- **SQLite** database with SQLAlchemy ORM
-- **JWT authentication** with access/refresh token pattern (cookies supported)
-- **CORS tightened** to frontend/backend origins; credentials allowed by default
+### Backend (8001)
+- FastAPI + SQLAlchemy (SQLite default)
+- JWT auth with hashed/rotated refresh tokens; cookie support
+- Tight CORS (credentials) and quieter logging (configurable)
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (recommended)
+### Docker (recommended)
 
 ```bash
 # Clone the repository
@@ -48,7 +45,7 @@ docker-compose up --build
 - 🌐 Frontend: http://localhost:3000
 - 📚 API Docs: http://localhost:8001/docs
 
-### Option 2: Local development
+### Local development
 
 #### Prerequisites
 - **Node.js 18+** (for frontend)
@@ -75,28 +72,19 @@ uv run python -m app.main
 
 > Note: Prefer `python -m` for app commands locally. Docker images still use `uv` as the runtime.
 
-#### Frontend Setup
+#### Frontend
 
 ```bash
 cd frontend
 
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-npm run dev
+bun run dev
 ```
 
-## 🗄️ Backend commands (cheat sheet)
-
-```bash
-cd backend
-uv sync
-uv run python -m app.setup migrate     # apply migrations (creates DB/tables if missing)
-uv run python -m app.setup seed        # seed default users from env
-uv run python -m app.setup downgrade   # rollback one revision
-uv run python -m app.main              # run FastAPI
-```
+<!-- Commands are documented once in Quick Start → Backend. Avoid duplicating here. -->
 
 ### Security & Auth Notes
 
@@ -148,11 +136,10 @@ docker-compose down             # stop and remove
 - API docs: http://localhost:8001/docs
 - Dev guide (details): see `CLAUDE.md`
 
-## 🛠️ Scripts
+## 🛠️ Scripts (Frontend)
 
-Frontend:
+From `frontend/`:
 ```bash
-cd frontend
 npm run dev    # dev server
 npm run build  # production build
 npm run start  # production server

@@ -41,6 +41,12 @@ export async function verifyEmailService(token: string): Promise<MessageResponse
   return res.data;
 }
 
+export async function resendVerificationEmail(identifier: string): Promise<MessageResponse> {
+  // identifier can be email or username
+  const res = await apiClient.post<MessageResponse>("/api/auth/verify-email/resend", { email_or_username: identifier });
+  return res.data;
+}
+
 export async function requestPasswordReset(email: string): Promise<MessageResponse> {
   const res = await apiClient.post<MessageResponse>("/api/auth/password/reset", { email });
   return res.data;

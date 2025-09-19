@@ -32,6 +32,15 @@ export function getFrontendBaseUrl(): string {
   return buildUrl(domain, protocol, port);
 }
 
+export function getPasswordPolicy() {
+  const minLength = Number(process.env.NEXT_PUBLIC_PASSWORD_MIN_LENGTH || 12);
+  const requireLower = (process.env.NEXT_PUBLIC_PASSWORD_REQUIRE_LOWER || "true").toLowerCase() !== "false";
+  const requireUpper = (process.env.NEXT_PUBLIC_PASSWORD_REQUIRE_UPPER || "true").toLowerCase() !== "false";
+  const requireDigit = (process.env.NEXT_PUBLIC_PASSWORD_REQUIRE_DIGIT || "true").toLowerCase() !== "false";
+  const requireSymbol = (process.env.NEXT_PUBLIC_PASSWORD_REQUIRE_SYMBOL || "true").toLowerCase() !== "false";
+  return { minLength, requireLower, requireUpper, requireDigit, requireSymbol };
+}
+
 export function getDocsUrl(): string {
   const apiBaseUrl = getApiBaseUrl();
   const docsUrl = `${apiBaseUrl}/docs`;

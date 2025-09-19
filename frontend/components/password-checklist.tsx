@@ -1,11 +1,16 @@
 ﻿import { CheckCircle2, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { getPasswordPolicy } from "@/lib/config";
+
+const policy = getPasswordPolicy();
 
 const RULES: Array<{ label: string; test: (value: string) => boolean }> = [
-  { label: "At least 8 characters", test: (value) => value.length >= 8 },
-  { label: "Contains a letter", test: (value) => /[A-Za-z]/.test(value) },
-  { label: "Contains a number", test: (value) => /\d/.test(value) },
+  { label: `At least ${policy.minLength} characters`, test: (value) => value.length >= policy.minLength },
+  ...(policy.requireLower ? [{ label: "Contains a lowercase letter", test: (value: string) => /[a-z]/.test(value) }] : []),
+  ...(policy.requireUpper ? [{ label: "Contains an uppercase letter", test: (value: string) => /[A-Z]/.test(value) }] : []),
+  ...(policy.requireDigit ? [{ label: "Contains a number", test: (value: string) => /\d/.test(value) }] : []),
+  ...(policy.requireSymbol ? [{ label: "Contains a symbol", test: (value: string) => /[^A-Za-z0-9]/.test(value) }] : []),
 ];
 
 interface PasswordChecklistProps {
