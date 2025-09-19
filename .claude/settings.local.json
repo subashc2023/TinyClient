@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm run build:*)",
-      "Bash(identify:*)"
+      "Bash(identify:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose logs:*)"
     ],
     "deny": [],
     "ask": []

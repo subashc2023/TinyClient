@@ -101,15 +101,30 @@ async def login(
     db: Session = Depends(get_db),
 ):
     email_or_username = user_credentials.email_or_username
+    print(f"🔍 Login attempt for: '{email_or_username}'")
+
     if "@" in email_or_username:
+        print(f"🔍 Searching by email: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.email) == email_or_username.lower()).first()
     else:
+        print(f"🔍 Searching by username: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.username) == email_or_username.lower()).first()
 
-    if not user or not verify_password(user_credentials.password, user.password_hash):
+    print(f"🔍 User found: {user is not None}")
+    if user:
+        print(f"🔍 User details: email={user.email}, username={user.username}, active={user.is_active}, verified={user.is_verified}")
+
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email/username or password",
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not verify_password(user_credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
