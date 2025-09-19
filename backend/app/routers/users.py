@@ -21,10 +21,10 @@ from ..schemas import (
 from ..security import hash_password, verify_password
 from ..services.email import send_invite_email, send_verification_email
 from ..utils.tokens import generate_token_with_hash
+from ..utils.config import get_frontend_base_url
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 INVITE_EXPIRATION_HOURS = int(os.getenv("INVITE_EXPIRATION_HOURS", "24"))
 EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 
@@ -98,7 +98,7 @@ async def update_me(
 
     if verification_payload:
         email, token = verification_payload
-        verification_link = f"{FRONTEND_BASE_URL.rstrip('/')}/verify?token={token}"
+        verification_link = f"{get_frontend_base_url().rstrip('/')}/verify?token={token}"
         background_tasks.add_task(
             send_verification_email,
             email=email,
@@ -185,7 +185,7 @@ async def invite_user(
     db.commit()
     db.refresh(invite)
 
-    invite_link = f"{FRONTEND_BASE_URL.rstrip('/')}/invite/accept?token={token}"
+    invite_link = f"{get_frontend_base_url().rstrip('/')}/invite/accept?token={token}"
     background_tasks.add_task(
         send_invite_email,
         email=invite.email,

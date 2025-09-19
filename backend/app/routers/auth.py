@@ -33,11 +33,11 @@ from ..security import (
 )
 from ..services.email import send_verification_email
 from ..utils.tokens import generate_token_with_hash, hash_token
+from ..utils.config import get_frontend_base_url
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 ALLOW_SIGNUP = os.getenv("ALLOW_SIGNUP", "false").strip().lower() in {"1", "true", "yes", "on"}
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
 EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 
 
@@ -89,7 +89,7 @@ async def signup(
     db.add(verification)
     db.commit()
 
-    verification_link = f"{FRONTEND_BASE_URL.rstrip('/')}/verify?token={token}"
+    verification_link = f"{get_frontend_base_url().rstrip('/')}/verify?token={token}"
     background_tasks.add_task(send_verification_email, email=new_user.email, verification_link=verification_link)
 
     return MessageResponse(message="Signup successful. Check your email to verify your account.")

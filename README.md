@@ -111,12 +111,26 @@ After seeding, you can log in with:
 
 When using Docker Compose, the root `.env` file is loaded for both services. Make sure any public flags such as `NEXT_PUBLIC_ALLOW_SIGNUP` are present (these are already included by default).
 
-Create a `.env` file in the `backend` directory:
+#### For Deployment 🚀
+
+The simplest way to configure both frontend and backend for deployment is using the unified domain configuration:
 
 ```env
 # Branding
 PROJECT_NAME=TinyClient
 NEXT_PUBLIC_PROJECT_NAME=TinyClient
+
+# Application URLs - unified configuration for deployment
+APP_DOMAIN=your-server-ip-or-domain.com
+APP_PROTOCOL=http
+FRONTEND_PORT=3000
+BACKEND_PORT=8001
+
+# Next.js public variables (auto-built from APP_* if not set)
+NEXT_PUBLIC_APP_DOMAIN=your-server-ip-or-domain.com
+NEXT_PUBLIC_APP_PROTOCOL=http
+NEXT_PUBLIC_FRONTEND_PORT=3000
+NEXT_PUBLIC_BACKEND_PORT=8001
 
 # Database
 DATABASE_URL=sqlite:///./tinyclient.db
@@ -131,29 +145,31 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 ALLOW_SIGNUP=true
 EMAIL_VERIFICATION_EXPIRATION_HOURS=24
 INVITE_EXPIRATION_HOURS=24
-FRONTEND_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_ALLOW_SIGNUP=true
 
 # Resend email settings
 RESEND_API_KEY=your-resend-api-key
-RESEND_FROM_EMAIL=noreply@subash.co
+RESEND_FROM_EMAIL=noreply@example.com
 RESEND_FROM_NAME=TinyClient
 
 # Initial users (for database seeding)
 ADMIN_USERNAME=admin
 ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=admin123!
+ADMIN_PASSWORD=changeMe123!
 USER_USERNAME=user
 USER_EMAIL=user@example.com
-USER_PASSWORD=user123!
+USER_PASSWORD=changeMe123!
 ```
 
-### Frontend Configuration
+#### Legacy Configuration (still supported)
 
-The frontend automatically connects to the backend via:
+For backward compatibility, you can still set URLs directly:
 ```env
+FRONTEND_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8001
-NEXT_PUBLIC_ALLOW_SIGNUP=true
 ```
+
+The system will use the unified `APP_*` variables to build URLs if the legacy ones aren't set.
 
 
 

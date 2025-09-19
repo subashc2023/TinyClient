@@ -1,5 +1,42 @@
+function buildUrl(domain: string, protocol: string, port: string): string {
+  const normalizedProtocol = protocol || "http";
+  const normalizedDomain = domain || "localhost";
+
+  // Handle default ports
+  if ((normalizedProtocol === "http" && port === "80") ||
+      (normalizedProtocol === "https" && port === "443")) {
+    return `${normalizedProtocol}://${normalizedDomain}`;
+  }
+
+  return port ? `${normalizedProtocol}://${normalizedDomain}:${port}` : `${normalizedProtocol}://${normalizedDomain}`;
+}
+
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
+  // Check for explicit API base URL first (backward compatibility)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  // Build from unified config
+  const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost";
+  const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
+  const port = process.env.NEXT_PUBLIC_BACKEND_PORT || "8001";
+
+  return buildUrl(domain, protocol, port);
+}
+
+export function getFrontendBaseUrl(): string {
+  // Check for explicit frontend base URL first (backward compatibility)
+  if (process.env.NEXT_PUBLIC_FRONTEND_BASE_URL) {
+    return process.env.NEXT_PUBLIC_FRONTEND_BASE_URL;
+  }
+
+  // Build from unified config
+  const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost";
+  const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
+  const port = process.env.NEXT_PUBLIC_FRONTEND_PORT || "3000";
+
+  return buildUrl(domain, protocol, port);
 }
 
 export function getDocsUrl(): string {

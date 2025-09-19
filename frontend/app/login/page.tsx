@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -245,7 +245,7 @@ export default function LoginPage() {
                 <p className="text-sm text-muted-foreground">
                   {isLoginMode
                     ? "Welcome back! Use your email or username to continue."
-                    : "We’ll send a verification email before you sign in for the first time."}
+                    : "We�ll send a verification email before you sign in for the first time."}
                 </p>
               </div>
             </header>
@@ -462,13 +462,15 @@ export default function LoginPage() {
                   <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-card px-2">Demo credentials</span>
+                  <span className="bg-card px-2">Need access?</span>
                 </div>
               </div>
-              <div className="space-y-1">
-                <p><strong>Admin:</strong> admin@example.com (or &apos;admin&apos;) / admin123!</p>
-                <p><strong>User:</strong> user@example.com (or &apos;user&apos;) / user123!</p>
-              </div>
+              <p className="text-sm">
+                Contact your {projectName} administrator for an invite or help resetting your credentials.
+              </p>
+              <p className="text-xs">
+                Invitations arrive by email and include a secure link to finish setup.
+              </p>
               <p className="pt-2 text-sm">
                 Want to go back?{" "}
                 <Link href={ROUTES.home} className="font-semibold text-primary hover:underline">
@@ -531,3 +533,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
