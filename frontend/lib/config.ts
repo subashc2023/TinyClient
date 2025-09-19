@@ -14,6 +14,7 @@ function buildUrl(domain: string, protocol: string, port: string): string {
 export function getApiBaseUrl(): string {
   // Check for explicit API base URL first (backward compatibility)
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    console.log(`🔧 Using explicit NEXT_PUBLIC_API_BASE_URL: ${process.env.NEXT_PUBLIC_API_BASE_URL}`);
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
 
@@ -22,7 +23,10 @@ export function getApiBaseUrl(): string {
   const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
   const port = process.env.NEXT_PUBLIC_BACKEND_PORT || "8001";
 
-  return buildUrl(domain, protocol, port);
+  const builtUrl = buildUrl(domain, protocol, port);
+  console.log(`🔧 Building API URL from env vars - domain: ${domain}, protocol: ${protocol}, port: ${port} -> ${builtUrl}`);
+
+  return builtUrl;
 }
 
 export function getFrontendBaseUrl(): string {

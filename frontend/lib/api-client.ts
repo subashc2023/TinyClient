@@ -4,6 +4,7 @@
   AxiosRequestConfig,
   AxiosResponse,
 } from "axios";
+import { getApiBaseUrl } from "./config";
 
 type RequestHeaders = Record<string, string>;
 
@@ -27,8 +28,11 @@ class ApiClient {
   }> = [];
 
   constructor() {
+    const apiBaseUrl = getApiBaseUrl();
+    console.log(`🔧 API Client initialized with baseURL: ${apiBaseUrl}`);
+
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001",
+      baseURL: apiBaseUrl,
       headers: {
         "Content-Type": "application/json",
       },
