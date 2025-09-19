@@ -29,17 +29,19 @@ const logoPath = path.resolve(frontendRoot, "public", "mcp.png");
 const logoDataUri = `data:image/png;base64,${readFileSync(logoPath, { encoding: "base64" })}`;
 const projectName = process.env.PROJECT_NAME || process.env.NEXT_PUBLIC_PROJECT_NAME || "TinyClient";
 
-const templates: TemplateConfig<InviteEmailProps | VerificationEmailProps | PasswordResetEmailProps>[] = [
+type EmailTemplateProps = InviteEmailProps | VerificationEmailProps | PasswordResetEmailProps;
+
+const templates: TemplateConfig<EmailTemplateProps>[] = [
   {
     name: "verification_email",
     subject: getVerificationEmailSubject(projectName),
-    component: VerificationEmail as React.ComponentType<InviteEmailProps | VerificationEmailProps>,
+    component: VerificationEmail as React.ComponentType<EmailTemplateProps>,
     props: { verificationLink: "{{verification_link}}", logoSrc: logoDataUri, projectName }
   },
   {
     name: "invite_email",
     subject: getInviteEmailSubject(projectName),
-    component: InviteEmail as React.ComponentType<InviteEmailProps | VerificationEmailProps>,
+    component: InviteEmail as React.ComponentType<EmailTemplateProps>,
     props: {
       inviteLink: "{{invite_link}}",
       invitedBy: "{{invited_by}}",
@@ -50,7 +52,7 @@ const templates: TemplateConfig<InviteEmailProps | VerificationEmailProps | Pass
   {
     name: "password_reset_email",
     subject: getPasswordResetEmailSubject(projectName),
-    component: PasswordResetEmail as React.ComponentType<InviteEmailProps | VerificationEmailProps | PasswordResetEmailProps>,
+    component: PasswordResetEmail as React.ComponentType<EmailTemplateProps>,
     props: { resetLink: "{{reset_link}}", logoSrc: logoDataUri, projectName }
   }
 ];
