@@ -46,14 +46,33 @@ class ApiClient {
           nextConfig.headers = nextConfig.headers ?? {};
           nextConfig.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Log API requests
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        if (config.data && config.method !== 'get') {
+          console.log('📤 Request data:', config.data);
+        }
+
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => {
+        console.error('❌ Request error:', error);
+        return Promise.reject(error);
+      }
     );
 
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Log successful responses
+        console.log(`✅ API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+        return response;
+      },
       async (error: AxiosError) => {
+        // Log error responses
+        console.error(`❌ API Error: ${error.response?.status || 'No response'} ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+        if (error.response?.data) {
+          console.error('📥 Error data:', error.response.data);
+        }
         const config = error.config as RetryableRequestConfig | undefined;
         if (!config) {
           return Promise.reject(error);

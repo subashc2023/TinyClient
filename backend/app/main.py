@@ -1,10 +1,16 @@
 import os
+import logging
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+import time
 
 from .routers import auth, users
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -25,6 +31,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    logger.info(f"🚀 {request.method} {request.url.path} from {request.client.host if request.client else 'unknown'}")
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+    logger.info(f"✅ {request.method} {request.url.path} -> {response.status_code} ({process_time:.3f}s)")
+
+    return response
 
 app.include_router(auth.router)
 app.include_router(users.router)

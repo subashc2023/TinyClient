@@ -56,6 +56,24 @@ const nextConfig: NextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
+  // Fix Cross-Origin warning
+  async headers() {
+    return [
+      {
+        source: '/_next/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ];
+  },
+  // Allow development origins
+  ...(process.env.NODE_ENV === 'development' && {
+    allowedDevOrigins: ['104.225.217.226'],
+  }),
 };
 
 export default nextConfig;
