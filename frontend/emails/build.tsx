@@ -32,13 +32,13 @@ const templates: TemplateConfig<InviteEmailProps | VerificationEmailProps>[] = [
   {
     name: "verification_email",
     subject: getVerificationEmailSubject(projectName),
-    component: VerificationEmail,
+    component: VerificationEmail as React.ComponentType<InviteEmailProps | VerificationEmailProps>,
     props: { verificationLink: "{{verification_link}}", logoSrc: logoDataUri, projectName }
   },
   {
     name: "invite_email",
     subject: getInviteEmailSubject(projectName),
-    component: InviteEmail,
+    component: InviteEmail as React.ComponentType<InviteEmailProps | VerificationEmailProps>,
     props: {
       inviteLink: "{{invite_link}}",
       invitedBy: "{{invited_by}}",

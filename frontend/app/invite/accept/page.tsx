@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Lock, Mail, User } from "lucide-react";
 
@@ -23,7 +23,7 @@ function resolveErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export default function InviteAcceptPage() {
+function InviteAcceptPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
@@ -123,117 +123,183 @@ export default function InviteAcceptPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_55%),_radial-gradient(circle_at_bottom,_rgba(16,185,129,0.14),_transparent_60%)]" />
       <div className="absolute inset-0 opacity-[0.09] dark:opacity-[0.15] [background-image:url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZmlsdGVyIGlkPSJub2lzZSI+CiAgICA8ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC45IiBudW1PY3RhdmVzPSI0IiBzZWVkPSIxIi8+CiAgICA8ZmVDb2xvck1hdHJpeCBpbj0iVHVyYnVsZW5jZSIgdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPgogIDwvZmlsdGVyPgogIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNub2lzZSkiLz4KPC9zdmc+')]" />
 
-      <div className="relative z-10 w-full max-w-3xl">
-        <div className="rounded-[28px] border border-border/60 bg-background/75 p-6 shadow-2xl backdrop-blur sm:p-10">
-          <div className="space-y-3 text-center">
-            <h1 className="text-3xl font-semibold">Complete your invitation</h1>
-            {message && <p className="text-sm text-muted-foreground">{message}</p>}
+      <div className="relative z-10 w-full max-w-5xl">
+        <div className="grid gap-8 rounded-[34px] border border-border/60 bg-background/70 p-6 shadow-2xl backdrop-blur xl:grid-cols-[420px_minmax(0,1fr)] xl:p-10">
+          <div className="space-y-8">
+            <header className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">Complete your invitation</h2>
+                {message && <p className="text-sm text-muted-foreground">{message}</p>}
+              </div>
+            </header>
+
+            <div>
+              {error && (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              {isCompleted ? (
+                <div className="space-y-4 text-center">
+                  <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+                  <p className="text-sm text-muted-foreground">
+                    Invitation accepted for <strong>{email}</strong>. You can now sign in using your new credentials.
+                  </p>
+                  <Button onClick={() => router.push(ROUTES.login)}>Go to sign in</Button>
+                </div>
+              ) : (
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Mail className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        disabled
+                        className="h-11 w-full rounded-xl border border-input bg-muted pl-12 pr-4 text-sm text-muted-foreground"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Username</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(event) => setUsername(event.target.value)}
+                        required
+                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        placeholder="Choose a username"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Password</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Lock className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        placeholder="Create a password"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Confirm password</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Lock className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        required
+                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        placeholder="Re-enter your password"
+                      />
+                    </div>
+                    {isPasswordMismatch && (
+                      <p className="text-xs text-destructive">Passwords do not match.</p>
+                    )}
+                  </div>
+
+                  <Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Accept invitation"
+                    )}
+                  </Button>
+                </form>
+              )}
+            </div>
+
+            <div className="space-y-4 text-center text-xs text-muted-foreground">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-2">Need access?</span>
+                </div>
+              </div>
+              <p className="text-sm">
+                Contact your administrator for help with invitations or account setup.
+              </p>
+            </div>
           </div>
 
-          {error && (
-            <div className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {isCompleted ? (
-            <div className="mt-6 space-y-4 text-center">
-              <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+          <aside className="hidden xl:flex flex-col justify-between rounded-[28px] border border-border/50 bg-gradient-to-br from-background/70 via-background/40 to-background/20 p-10 backdrop-blur">
+            <div className="space-y-5">
+              <h3 className="text-xl font-semibold">Set up your account</h3>
               <p className="text-sm text-muted-foreground">
-                Invitation accepted for <strong>{email}</strong>. You can now sign in using your new credentials.
+                Complete your invitation to access your account and start collaborating.
               </p>
-              <Button onClick={() => router.push(ROUTES.login)}>Go to sign in</Button>
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <User className="mt-1 h-4 w-4 text-primary" />
+                  <div>
+                    <span>Choose a username and secure password.</span>
+                    <div className="mt-2">
+                      <PasswordChecklist password={password} className="text-xs" />
+                    </div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
+                  <span>Your email has been pre-verified through the invitation link.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Lock className="mt-1 h-4 w-4 text-primary" />
+                  <span>Once complete, you can sign in immediately with your new credentials.</span>
+                </li>
+              </ul>
             </div>
-          ) : (
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    disabled
-                    className="h-11 w-full rounded-xl border border-input bg-muted pl-12 pr-4 text-sm text-muted-foreground"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Username</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <User className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    required
-                    className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
-                    placeholder="Choose a username"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                                    <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                    className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
-                    placeholder="Create a password"
-                  />
-                </div>
-                <PasswordChecklist password={password} className="pl-1" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Confirm password</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                    className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
-                    placeholder="Re-enter your password"
-                  />
-                </div>
-                {isPasswordMismatch && (
-                  <p className="text-xs text-destructive">Passwords do not match.</p>
-                )}
-              </div>
-
-              <Button type="submit" className="h-11 w-full rounded-xl" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-current" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Accept invitation"
-                )}
-              </Button>
-            </form>
-          )}
+            <div className="rounded-2xl border border-border/40 bg-background/60 p-6 text-sm text-muted-foreground shadow-inner">
+              <p className="font-semibold text-foreground">Already have an account?</p>
+              <p className="mt-2 leading-relaxed">
+                If you already have access, you can return to the sign-in page instead.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InviteAcceptPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    }>
+      <InviteAcceptPageContent />
+    </Suspense>
   );
 }
 

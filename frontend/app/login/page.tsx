@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -53,7 +53,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { startTransition } = useRouteOverlay();
@@ -245,7 +245,7 @@ export default function LoginPage() {
                 <p className="text-sm text-muted-foreground">
                   {isLoginMode
                     ? "Welcome back! Use your email or username to continue."
-                    : "We’ll send a verification email before you sign in for the first time."}
+                    : "We'll send a verification email before you sign in for the first time."}
                 </p>
               </div>
             </header>
@@ -405,9 +405,7 @@ export default function LoginPage() {
                         placeholder="Create a password"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Minimum 8 characters.</p>
                   </div>
-                  <PasswordChecklist password={signupPassword} className="pt-1 pl-1" />
 
                   <div className="space-y-2">
                     <label htmlFor="signup-password-confirm" className="text-sm font-medium">
@@ -423,7 +421,7 @@ export default function LoginPage() {
                         required
                         value={signupPasswordConfirm}
                         onChange={(event) => setSignupPasswordConfirm(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus-border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
                         placeholder="Re-enter your password"
                       />
                     </div>
@@ -507,7 +505,12 @@ export default function LoginPage() {
                 <ol className="space-y-4 text-sm text-muted-foreground">
                   <li className="flex items-start gap-3">
                     <User className="mt-1 h-4 w-4 text-primary" />
-                    <span>Create your username and password above.</span>
+                    <div>
+                      <span>Create your username and password in the form.</span>
+                      <div className="mt-2">
+                        <PasswordChecklist password={signupPassword} className="text-xs" />
+                      </div>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
@@ -531,6 +534,18 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
 
