@@ -551,7 +551,7 @@ function LoginPageContent() {
                     </li>
                   </ol>
                   {signupSuccess && (
-                    <Alert className="mt-4">
+                    <Alert variant="success" className="mt-4">
                       <CheckCircle2 className="h-5 w-5" />
                       <AlertDescription className="ml-2">
                         {signupSuccess} <span className="text-xs text-muted-foreground">If you don’t see it, check your spam folder.</span>

@@ -3,14 +3,14 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: tinyclient-backend:dev
-    container_name: tinyclient-backend
+    image: project-name-backend:dev
+    container_name: project-name-backend
     ports:
       - "8001:8001"
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///./tinyclient.db}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./project-name.db}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
@@ -23,8 +23,8 @@ services:
   frontend:
     build:
       context: ./frontend
-    image: tinyclient-frontend:dev
-    container_name: tinyclient-frontend
+    image: project-name-frontend:dev
+    container_name: project-name-frontend
     ports:
       - "3000:3000"
     env_file:

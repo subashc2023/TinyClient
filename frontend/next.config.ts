@@ -41,6 +41,15 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_PROJECT_NAME: resolvedProjectName,
   },
+  async redirects() {
+    return [
+      { source: '/login', destination: '/auth/login', permanent: true },
+      { source: '/signup', destination: '/auth/signup', permanent: true },
+      { source: '/verify', destination: '/auth/verify', permanent: true },
+      { source: '/reset', destination: '/auth/reset', permanent: true },
+      { source: '/invite/accept', destination: '/auth/accept', permanent: true },
+    ];
+  },
   images: {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 31536000, // 1 year

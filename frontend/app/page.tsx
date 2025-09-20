@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/routes";
 import { allowSignup, getProjectName } from "@/lib/config";
 import { Layout, Server, Lock, PlugZap, Zap, Terminal } from "lucide-react";
 import Image from "next/image";
@@ -59,7 +60,7 @@ export default function Home() {
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3">
                 <Button asChild size="lg">
-                  <a href={allowSignup ? "/login?mode=signup" : "/login"}>{allowSignup ? "Get Started" : "Request Access"}</a>
+                  <a href={allowSignup ? `${ROUTES.login}?mode=signup` : ROUTES.login}>{allowSignup ? "Get Started" : "Request Access"}</a>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                   <a href="#docs">View Documentation</a>
@@ -166,7 +167,7 @@ export default function Home() {
           </ol>
           <div className="mt-10 text-center">
             <Button asChild>
-              <a href={allowSignup ? "/login?mode=signup" : "/login"}>{allowSignup ? "Start in minutes" : "Request access"}</a>
+              <a href={allowSignup ? `${ROUTES.login}?mode=signup` : ROUTES.login}>{allowSignup ? "Start in minutes" : "Request access"}</a>
             </Button>
           </div>
         </div>

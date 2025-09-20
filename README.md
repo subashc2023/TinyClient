@@ -1,6 +1,6 @@
 # 🚀 TinyClient
 
-> A modern, self-hostable MCP (Model Context Protocol) client with a sleek web interface
+A modern, self-hostable MCP (Model Context Protocol) client with a sleek web interface 
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -35,7 +35,7 @@
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd TinyClient
+cd TinyClient                                                                                                                                                                                                                                                       
 
 # Start the stack
 docker-compose up --build

@@ -5,6 +5,7 @@
   AxiosResponse,
 } from "axios";
 import { getApiBaseUrl } from "./config";
+import { ROUTES } from "@/lib/routes";
 
 type RequestHeaders = Record<string, string>;
 
@@ -111,7 +112,7 @@ class ApiClient {
             this.failedQueue = [];
 
             if (typeof window !== "undefined") {
-              window.location.href = "/login";
+              window.location.href = ROUTES.login;
             }
 
             return Promise.reject(refreshError);

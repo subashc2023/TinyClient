@@ -1,9 +1,9 @@
 export const ROUTES = {
   home: "/",
-  login: "/login",
-  signup: "/signup",
-  verify: "/verify",
-  inviteAccept: "/invite/accept",
+  login: "/auth/login",
+  signup: "/auth/signup",
+  verify: "/auth/verify",
+  inviteAccept: "/auth/accept",
   workspace: "/workspace",
   settings: "/settings",
   admin: "/admin",
