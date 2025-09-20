@@ -24,15 +24,14 @@ export async function signupService(email: string, username: string, password: s
 }
 
 export async function verifyService(accessToken: string): Promise<TokenVerifyResponse> {
-  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
-  const res = await apiClient.get<TokenVerifyResponse>("/api/auth/verify", { headers });
+  // Cookie-only: ignore provided token, rely on withCredentials
+  const res = await apiClient.get<TokenVerifyResponse>("/api/auth/verify");
   return res.data;
 }
 
-export async function logoutService(accessToken: string): Promise<MessageResponse> {
-  const res = await apiClient.post<MessageResponse>("/api/auth/logout", undefined, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export async function logoutService(_accessToken: string): Promise<MessageResponse> {
+  // Cookie-only: no Authorization header
+  const res = await apiClient.post<MessageResponse>("/api/auth/logout");
   return res.data;
 }
 

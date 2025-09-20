@@ -3,23 +3,12 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { verifyEmailService } from "@/services/auth";
+import { getErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
-function resolveErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null) {
-    const response = (error as { response?: { data?: { detail?: string } } }).response;
-    const detail = response?.data?.detail;
-    if (typeof detail === "string" && detail.length > 0) {
-      return detail;
-    }
-  }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
-}
+// centralized error helper
 
 function VerifyPageContent() {
   const searchParams = useSearchParams();
@@ -43,7 +32,7 @@ function VerifyPageContent() {
         setMessage(response.message);
       } catch (err) {
         setStatus("error");
-        setMessage(resolveErrorMessage(err, "Operation failed."));
+        setMessage(getErrorMessage(err, "Operation failed."));
       }
     };
 

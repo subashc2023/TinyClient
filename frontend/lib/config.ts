@@ -12,7 +12,15 @@ function buildUrl(domain: string, protocol: string, port: string): string {
 }
 
 export function getApiBaseUrl(): string {
-  // Build from unified config only
+  // Prefer explicit override when provided
+  const override = (process.env.NEXT_PUBLIC_API_BASE_URL || "").trim();
+  if (override) {
+    const url = override.startsWith("http") ? override : `http://${override}`;
+    console.log(`🔧 API base URL override detected: ${url}`);
+    return url;
+  }
+
+  // Build from unified config
   const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost";
   const protocol = process.env.NEXT_PUBLIC_APP_PROTOCOL || "http";
   const port = process.env.NEXT_PUBLIC_BACKEND_PORT || "8001";

@@ -5,23 +5,16 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Lock, Mail, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { PasswordChecklist } from "@/components/password-checklist";
 import { ROUTES } from "@/lib/routes";
+import { getErrorMessage } from "@/lib/errors";
 import { acceptInviteService, fetchInviteDetails } from "@/services/auth";
 
-function resolveErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null) {
-    const response = (error as { response?: { data?: { detail?: string } } }).response;
-    const detail = response?.data?.detail;
-    if (typeof detail === "string" && detail.length > 0) {
-      return detail;
-    }
-  }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
-}
+// centralized error helper
 
 function InviteAcceptPageContent() {
   const searchParams = useSearchParams();
@@ -51,7 +44,7 @@ function InviteAcceptPageContent() {
         setEmail(invite.email);
         setMessage(`Invitation for ${invite.email} expires ${new Date(invite.expires_at).toLocaleString()}.`);
       } catch (err) {
-        setError(resolveErrorMessage(err, "Invitation not found."));
+        setError(getErrorMessage(err, "Invitation not found."));
       } finally {
         setIsLoading(false);
       }
@@ -87,7 +80,7 @@ function InviteAcceptPageContent() {
       setMessage(response.message);
       setIsCompleted(true);
     } catch (err) {
-      setError(resolveErrorMessage(err, "Unable to accept invitation."));
+      setError(getErrorMessage(err, "Unable to accept invitation."));
     } finally {
       setIsSubmitting(false);
     }
@@ -134,12 +127,10 @@ function InviteAcceptPageContent() {
 
             <div>
               {error && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">{error}</p>
-                  </div>
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-5 w-5" />
+                  <AlertDescription className="ml-2">{error}</AlertDescription>
+                </Alert>
               )}
 
               {isCompleted ? (
@@ -153,66 +144,61 @@ function InviteAcceptPageContent() {
               ) : (
                 <form className="space-y-6" onSubmit={handleSubmit}>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
+                    <Label>Email</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Mail className="h-5 w-5" />
                       </div>
-                      <input
-                        type="email"
-                        value={email}
-                        disabled
-                        className="h-11 w-full rounded-xl border border-input bg-muted pl-12 pr-4 text-sm text-muted-foreground"
-                      />
+                      <Input type="email" value={email} disabled className="h-11 pl-12 text-muted-foreground" />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Username</label>
+                    <Label>Username</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <User className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         type="text"
                         value={username}
                         onChange={(event) => setUsername(event.target.value)}
                         required
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Choose a username"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Password</label>
+                    <Label>Password</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         type="password"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         required
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Create a password"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Confirm password</label>
+                    <Label>Confirm password</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         type="password"
                         value={confirmPassword}
                         onChange={(event) => setConfirmPassword(event.target.value)}
                         required
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Re-enter your password"
                       />
                     </div>
@@ -250,39 +236,43 @@ function InviteAcceptPageContent() {
             </div>
           </div>
 
-          <aside className="hidden xl:flex flex-col justify-between rounded-[28px] border border-border/50 bg-gradient-to-br from-background/70 via-background/40 to-background/20 p-10 backdrop-blur">
-            <div className="space-y-5">
-              <h3 className="text-xl font-semibold">Set up your account</h3>
-              <p className="text-sm text-muted-foreground">
-                Complete your invitation to access your account and start collaborating.
-              </p>
-              <ul className="space-y-4 text-sm text-muted-foreground">
-                <li className="flex items-start gap-3">
-                  <User className="mt-1 h-4 w-4 text-primary" />
-                  <div>
-                    <span>Choose a username and secure password.</span>
-                    <div className="mt-2">
-                      <PasswordChecklist password={password} className="text-xs" />
+          <aside className="hidden xl:flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Set up your account</CardTitle>
+                <CardDescription>Complete your invitation to start collaborating.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-4 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-3">
+                    <User className="mt-1 h-4 w-4 text-primary" />
+                    <div>
+                      <span>Choose a username and secure password.</span>
+                      <div className="mt-2">
+                        <PasswordChecklist password={password} className="text-xs" />
+                      </div>
                     </div>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
-                  <span>Your email has been pre-verified through the invitation link.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Lock className="mt-1 h-4 w-4 text-primary" />
-                  <span>Once complete, you can sign in immediately with your new credentials.</span>
-                </li>
-              </ul>
-            </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
+                    <span>Your email has been pre-verified through the invitation link.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Lock className="mt-1 h-4 w-4 text-primary" />
+                    <span>Once complete, you can sign in immediately with your new credentials.</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
 
-            <div className="rounded-2xl border border-border/40 bg-background/60 p-6 text-sm text-muted-foreground shadow-inner">
-              <p className="font-semibold text-foreground">Already have an account?</p>
-              <p className="mt-2 leading-relaxed">
-                If you already have access, you can return to the sign-in page instead.
-              </p>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Already have an account?</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <p>If you already have access, you can return to the sign-in page instead.</p>
+              </CardContent>
+            </Card>
           </aside>
         </div>
       </div>

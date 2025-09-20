@@ -45,19 +45,11 @@ class ApiClient {
   private setupInterceptors() {
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem("access_token");
-        if (token) {
-          const nextConfig = config as RetryableRequestConfig;
-          nextConfig.headers = nextConfig.headers ?? {};
-          nextConfig.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Log API requests
+        // Cookie-only: no Authorization header; rely on withCredentials
         console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         if (config.data && config.method !== 'get') {
           console.log('Request data:', config.data);
         }
-
         return config;
       },
       (error) => {
@@ -99,11 +91,7 @@ class ApiClient {
             return new Promise<string>((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             })
-              .then((token) => {
-                config.headers = config.headers ?? {};
-                config.headers.Authorization = `Bearer ${token}`;
-                return this.client(config);
-              })
+              .then(() => this.client(config))
               .catch((queueError) => Promise.reject(queueError));
           }
 
@@ -111,32 +99,16 @@ class ApiClient {
           this.isRefreshing = true;
 
           try {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (!refreshToken) {
-              throw new Error("No refresh token available");
-            }
+            // Cookie-only: call refresh with no body; backend reads cookie
+            await this.client.post<RefreshResponse>("/api/auth/refresh");
 
-            const response = await this.client.post<RefreshResponse>("/api/auth/refresh", {
-              refresh_token: refreshToken,
-            });
-
-            const { access_token, refresh_token: newRefreshToken } = response.data;
-
-            localStorage.setItem("access_token", access_token);
-            localStorage.setItem("refresh_token", newRefreshToken);
-
-            this.failedQueue.forEach(({ resolve }) => resolve(access_token));
+            this.failedQueue.forEach(({ resolve }) => resolve(""));
             this.failedQueue = [];
 
-            config.headers = config.headers ?? {};
-            config.headers.Authorization = `Bearer ${access_token}`;
             return this.client(config);
           } catch (refreshError) {
             this.failedQueue.forEach(({ reject }) => reject(refreshError));
             this.failedQueue = [];
-
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
 
             if (typeof window !== "undefined") {
               window.location.href = "/login";

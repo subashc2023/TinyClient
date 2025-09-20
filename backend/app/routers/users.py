@@ -22,6 +22,7 @@ from ..security import hash_password, verify_password
 from ..services.email import send_invite_email, send_verification_email
 from ..utils.tokens import generate_token_with_hash
 from ..utils.config import get_frontend_base_url
+from ..utils.strings import normalize_email
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -30,7 +31,8 @@ EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATI
 
 
 def _normalize_email(value: str) -> str:
-    return value.strip().lower()
+    # Backward compatibility within this module; delegate to shared util
+    return normalize_email(value)
 
 
 @router.get("/", response_model=List[UserResponse])

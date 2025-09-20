@@ -17,11 +17,17 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { PasswordChecklist } from "@/components/password-checklist";
 import { useAuth } from "@/lib/auth-context";
 import { ROUTES } from "@/lib/routes";
 import { useRouteOverlay } from "@/lib/route-overlay-context";
 import { signupService, resendVerificationEmail } from "@/services/auth";
+import { requestPasswordReset } from "@/services/auth";
+import { getErrorMessage } from "@/lib/errors";
 import { allowSignup, getProjectName } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
@@ -29,30 +35,7 @@ type AuthMode = "login" | "signup";
 
 const projectName = getProjectName();
 
-type ErrorLike = {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-    status?: number;
-  };
-};
-
-function extractErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null) {
-    const response = (error as ErrorLike).response;
-    const detail = response?.data?.detail;
-    if (typeof detail === "string" && detail.length > 0) {
-      return detail;
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallback;
-}
+// Error helper centralized
 
 function LoginPageContent() {
   const router = useRouter();
@@ -84,6 +67,9 @@ function LoginPageContent() {
   const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     setMode(modeFromParams);
@@ -140,7 +126,7 @@ function LoginPageContent() {
       startTransition("Opening workspace...");
       router.replace(ROUTES.workspace);
     } catch (error) {
-      setLoginError(extractErrorMessage(error, "Login failed. Please check your credentials."));
+      setLoginError(getErrorMessage(error, "Login failed. Please check your credentials."));
     } finally {
       setIsSubmitting(false);
       setActiveSubmit(null);
@@ -171,7 +157,7 @@ function LoginPageContent() {
       setSignupPassword("");
       setSignupPasswordConfirm("");
     } catch (error) {
-      setSignupError(extractErrorMessage(error, "Unable to create your account."));
+      setSignupError(getErrorMessage(error, "Unable to create your account."));
     } finally {
       setIsSubmitting(false);
       setActiveSubmit(null);
@@ -190,9 +176,26 @@ function LoginPageContent() {
       const res = await resendVerificationEmail(identifier.trim());
       setResendMessage(res.message);
     } catch (error) {
-      setResendMessage(extractErrorMessage(error, "Unable to resend verification email."));
+      setResendMessage(getErrorMessage(error, "Unable to resend verification email."));
     } finally {
       setResendLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotMessage(null);
+    setForgotLoading(true);
+    try {
+      if (!forgotEmail) {
+        setForgotMessage("Enter your email first.");
+        return;
+      }
+      const res = await requestPasswordReset(forgotEmail.trim());
+      setForgotMessage(res.message);
+    } catch (err) {
+      setForgotMessage(getErrorMessage(err, "Unable to request reset."));
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -288,51 +291,43 @@ function LoginPageContent() {
               {isLoginMode ? (
                 <form className="space-y-6" onSubmit={handleLoginSubmit}>
                   {loginError && (
-                    <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4">
-                      <div className="flex">
-                        <AlertCircle className="h-5 w-5 text-destructive" />
-                        <div className="ml-3">
-                          <p className="text-sm text-destructive">{loginError}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-5 w-5" />
+                      <AlertDescription className="ml-2">{loginError}</AlertDescription>
+                    </Alert>
                   )}
 
                   <div className="space-y-2">
-                    <label htmlFor="login-identifier" className="text-sm font-medium">
-                      Email or username
-                    </label>
+                    <Label htmlFor="login-identifier">Email or username</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Mail className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="login-identifier"
                         type="text"
                         required
                         value={loginIdentifier}
                         onChange={(event) => setLoginIdentifier(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="you@example.com or username"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="login-password" className="text-sm font-medium">
-                      Password
-                    </label>
+                    <Label htmlFor="login-password">Password</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="login-password"
                         type={showLoginPassword ? "text" : "password"}
                         required
                         value={loginPassword}
                         onChange={(event) => setLoginPassword(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-12 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12 pr-12"
                         placeholder="Your password"
                       />
                       <button
@@ -356,97 +351,103 @@ function LoginPageContent() {
                       "Sign in"
                     )}
                   </Button>
+                  <div className="text-xs text-muted-foreground text-center">
+                    <details>
+                      <summary className="cursor-pointer">Forgot password?</summary>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="Enter your email"
+                          className="h-9 text-xs"
+                        />
+                        <Button type="button" size="sm" variant="outline" disabled={forgotLoading} onClick={handleForgotPassword}>
+                          {forgotLoading ? "Sending..." : "Send reset"}
+                        </Button>
+                      </div>
+                      {forgotMessage && <p className="mt-2 text-xs">{forgotMessage}</p>}
+                    </details>
+                  </div>
                 </form>
               ) : (
                 <form className="space-y-6" onSubmit={handleSignupSubmit}>
                   {signupError && (
-                    <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4">
-                      <div className="flex">
-                        <AlertCircle className="h-5 w-5 text-destructive" />
-                        <div className="ml-3">
-                          <p className="text-sm text-destructive">{signupError}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-5 w-5" />
+                      <AlertDescription className="ml-2">{signupError}</AlertDescription>
+                    </Alert>
                   )}
 
                   {signupSuccess && null}
 
                   <div className="space-y-2">
-                    <label htmlFor="signup-email" className="text-sm font-medium">
-                      Email address
-                    </label>
+                    <Label htmlFor="signup-email">Email address</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Mail className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="signup-email"
                         type="email"
                         required
                         value={signupEmail}
                         onChange={(event) => setSignupEmail(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="you@example.com"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="signup-username" className="text-sm font-medium">
-                      Username
-                    </label>
+                    <Label htmlFor="signup-username">Username</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <User className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="signup-username"
                         type="text"
                         required
                         value={signupUsername}
                         onChange={(event) => setSignupUsername(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Choose a username"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="signup-password" className="text-sm font-medium">
-                      Password
-                    </label>
+                    <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="signup-password"
                         type="password"
                         required
                         value={signupPassword}
                         onChange={(event) => setSignupPassword(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Create a password"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="signup-password-confirm" className="text-sm font-medium">
-                      Confirm password
-                    </label>
+                    <Label htmlFor="signup-password-confirm">Confirm password</Label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-5 w-5" />
                       </div>
-                      <input
+                      <Input
                         id="signup-password-confirm"
                         type="password"
                         required
                         value={signupPasswordConfirm}
                         onChange={(event) => setSignupPasswordConfirm(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-input bg-background/80 pl-12 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus:border-transparent focus:ring-2 focus:ring-primary/60"
+                        className="h-11 pl-12"
                         placeholder="Re-enter your password"
                       />
                     </div>
@@ -503,75 +504,74 @@ function LoginPageContent() {
             </div>
           </div>
 
-          <aside className="hidden xl:flex flex-col justify-between rounded-[28px] border border-border/50 bg-gradient-to-br from-background/70 via-background/40 to-background/20 p-10 backdrop-blur">
+          <aside className="hidden xl:flex flex-col gap-6">
             {isLoginMode ? (
-              <div className="space-y-5">
-                <h3 className="text-xl font-semibold">Welcome back</h3>
-                <p className="text-sm text-muted-foreground">
-                  Sign in to pick up where you left off. Your settings and recent activity load automatically.
-                </p>
-                <ul className="space-y-4 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-3">
-                    <Mail className="mt-1 h-4 w-4 text-primary" />
-                    <span>Use either your email address or username in the first field.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Lock className="mt-1 h-4 w-4 text-primary" />
-                    <span>Passwords are case-sensitive, and inactive accounts will be prompted to contact an admin.</span>
-                  </li>
-                </ul>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Welcome back</CardTitle>
+                  <CardDescription>Sign in to pick up where you left off.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-4 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-3">
+                      <Mail className="mt-1 h-4 w-4 text-primary" />
+                      <span>Use either your email address or username in the first field.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Lock className="mt-1 h-4 w-4 text-primary" />
+                      <span>Passwords are case-sensitive, and inactive accounts will be prompted to contact an admin.</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="space-y-5">
-                <h3 className="text-xl font-semibold">Three quick steps</h3>
-                <p className="text-sm text-muted-foreground">
-                  {`${projectName} signups require email verification. Follow the steps to get access.`}
-                </p>
-                <ol className="space-y-4 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-3">
-                    <User className="mt-1 h-4 w-4 text-primary" />
-                    <div>
-                      <span>Create your username and password in the form.</span>
-                      <div className="mt-2">
-                        <PasswordChecklist password={signupPassword} className="text-xs" />
-                      </div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
-                    <span>Check your inbox for the verification email from {projectName}.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <MailPlus className="mt-1 h-4 w-4 text-primary" />
-                    <span>After confirming, sign in to explore the workspace and invite teammates.</span>
-                  </li>
-                </ol>
-                {signupSuccess && (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                    <div className="flex">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                      <div className="ml-3">
-                        <p className="text-sm text-emerald-500">{signupSuccess}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">If you don’t see it, check your spam folder.</p>
-                        <div className="mt-2 flex items-center gap-3">
-                          <Button type="button" variant="outline" size="sm" onClick={handleResendVerification} disabled={resendLoading}>
-                            {resendLoading ? "Resending..." : "Resend verification"}
-                          </Button>
-                          {resendMessage && <span className="text-xs">{resendMessage}</span>}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Three quick steps</CardTitle>
+                  <CardDescription>{`${projectName} signups require email verification.`}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ol className="space-y-4 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-3">
+                      <User className="mt-1 h-4 w-4 text-primary" />
+                      <div>
+                        <span>Create your username and password in the form.</span>
+                        <div className="mt-2">
+                          <PasswordChecklist password={signupPassword} className="text-xs" />
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-1 h-4 w-4 text-primary" />
+                      <span>Check your inbox for the verification email from {projectName}.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <MailPlus className="mt-1 h-4 w-4 text-primary" />
+                      <span>After confirming, sign in to explore the workspace and invite teammates.</span>
+                    </li>
+                  </ol>
+                  {signupSuccess && (
+                    <Alert className="mt-4">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <AlertDescription className="ml-2">
+                        {signupSuccess} <span className="text-xs text-muted-foreground">If you don’t see it, check your spam folder.</span>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
-            <div className="rounded-2xl border border-border/40 bg-background/60 p-6 text-sm text-muted-foreground shadow-inner">
-              <p className="font-semibold text-foreground">Need a hand?</p>
-              <p className="mt-2 leading-relaxed">
-                Reach out to your {projectName} admin if you need a fresh invite or help activating your account.
-              </p>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Need a hand?</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                <p>
+                  Reach out to your {projectName} admin if you need a fresh invite or help activating your account.
+                </p>
+              </CardContent>
+            </Card>
           </aside>
         </div>
       </div>

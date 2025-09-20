@@ -4,24 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, User, Activity, Mail, Save, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useAuth } from "@/lib/auth-context";
 import { updatePassword, updateProfile } from "@/services/users";
+import { getErrorMessage } from "@/lib/errors";
 
 
-function resolveErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null) {
-    const response = (error as { response?: { data?: { detail?: string } } }).response;
-    const detail = response?.data?.detail;
-    if (typeof detail === "string" && detail.length > 0) {
-      return detail;
-    }
-  }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
-}
+// centralized error helper
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -70,7 +62,7 @@ export default function SettingsPage() {
         setProfileMessage("Profile updated successfully.");
       }
     } catch (err) {
-      setProfileError(resolveErrorMessage(err, "Unable to update profile."));
+      setProfileError(getErrorMessage(err, "Unable to update profile."));
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -104,7 +96,7 @@ export default function SettingsPage() {
       setConfirmPassword("");
       setTimeout(() => logout(), 1500);
     } catch (err) {
-      setPasswordError(resolveErrorMessage(err, "Unable to update password."));
+      setPasswordError(getErrorMessage(err, "Unable to update password."));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -130,32 +122,32 @@ export default function SettingsPage() {
               </h2>
               <form className="grid gap-4" onSubmit={handleProfileSubmit}>
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium text-muted-foreground">Email address</label>
+                  <Label>Email address</Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <input
+                    <Input
                       type="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      className="block w-full pl-9 pr-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      className="pl-9"
                       placeholder="you@example.com"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium text-muted-foreground">Username</label>
+                  <Label>Username</Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <User className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <input
+                    <Input
                       type="text"
                       value={username}
                       onChange={(event) => setUsername(event.target.value)}
-                      className="block w-full pl-9 pr-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      className="pl-9"
                       placeholder="Username"
                     />
                   </div>
@@ -186,36 +178,33 @@ export default function SettingsPage() {
               </h2>
               <form className="grid gap-4" onSubmit={handlePasswordSubmit}>
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium text-muted-foreground">Current password</label>
-                  <input
+                  <Label>Current password</Label>
+                  <Input
                     type="password"
                     value={currentPassword}
                     onChange={(event) => setCurrentPassword(event.target.value)}
-                    className="block w-full px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     placeholder="Enter your current password"
                     required
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium text-muted-foreground">New password</label>
-                  <input
+                  <Label>New password</Label>
+                  <Input
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
-                    className="block w-full px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     placeholder="Choose a new password"
                     required
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium text-muted-foreground">Confirm new password</label>
-                  <input
+                  <Label>Confirm new password</Label>
+                  <Input
                     type="password"
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="block w-full px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     placeholder="Re-enter new password"
                     required
                   />

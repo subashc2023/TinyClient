@@ -27,9 +27,9 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-foreground">
                 <span>Open-source</span>
                 <span className="h-1 w-1 rounded-full bg-foreground/50" />
-                <span>MIT</span>
+                <span>Self Hostable</span>
                 <span className="h-1 w-1 rounded-full bg-foreground/50" />
-                <span>Dockerized</span>
+                <span>Private</span>
               </div>
               <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
                 <span className="mr-2">{firstWord}</span>

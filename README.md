@@ -91,8 +91,9 @@ bun run dev
 - `JWT_SECRET_KEY` must be set (non-empty). The API refuses to start without it.
 - Refresh tokens are hashed in the DB and rotated; `token_version` increments on logout/password/email/status changes to invalidate sessions.
 - On login/refresh, the API sets cookies: `refresh_token` (HttpOnly) and `access_token` (non-HttpOnly). Clients may also use `Authorization: Bearer <access>`.
-- `/api/auth/verify` accepts either header or cookies and returns the current user.
-- Frontend Axios is `withCredentials: true` and only logs unexpected 5xx errors.
+- `/api/auth/verify` accepts cookies and returns the current user.
+- Cookie-only strategy: the frontend uses `withCredentials: true` and does not store tokens in localStorage.
+- Cookies are env-driven: `COOKIE_SECURE` (default true for https), `COOKIE_SAMESITE` (lax|strict|none; default lax), `COOKIE_DOMAIN` (optional), `COOKIE_PATH` (default /).
 
 ### CORS & Logging
 
@@ -109,10 +110,7 @@ SKIP_OPTIONS_LOGS=true    # skip OPTIONS preflights (default true)
 
 ### Default Users
 
-After seeding, you can log in with:
-
-- Admin: `admin@example.com` / `admin123`
-- User: `user@example.com` / `user123`
+After seeding, credentials are taken from `.env` variables: `ADMIN_*` and `USER_*`.
 
 ## 🔧 Configuration
 
@@ -134,7 +132,7 @@ docker-compose down             # stop and remove
 ## 🔗 Useful links
 
 - API docs: http://localhost:8001/docs
-- Dev guide (details): see `CLAUDE.md`
+- Dev guide (details): see `AGENTS.md`
 
 ## 🛠️ Scripts (Frontend)
 

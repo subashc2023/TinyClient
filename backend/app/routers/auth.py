@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Response, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -37,18 +37,42 @@ from ..security import (
 )
 from ..services.email import send_verification_email, send_password_reset_email
 from ..utils.tokens import generate_token_with_hash, hash_token
-from ..utils.config import get_frontend_base_url
+from ..utils.config import get_frontend_base_url, get_cookie_settings
+from ..utils.strings import normalize_email
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 ALLOW_SIGNUP = os.getenv("ALLOW_SIGNUP", "false").strip().lower() in {"1", "true", "yes", "on"}
 EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 PASSWORD_RESET_EXPIRATION_HOURS = int(os.getenv("PASSWORD_RESET_EXPIRATION_HOURS", "2"))
-EMAIL_VERIFICATION_EXPIRATION_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRATION_HOURS", "24"))
 
 
-def _normalize_email(value: str) -> str:
-    return value.strip().lower()
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    settings = get_cookie_settings()
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings["secure"],
+        samesite=settings["samesite"],
+        path=settings["path"],
+        domain=settings["domain"],
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings["secure"],
+        samesite=settings["samesite"],
+        path=settings["path"],
+        domain=settings["domain"],
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    settings = get_cookie_settings()
+    response.delete_cookie("access_token", path=settings["path"], domain=settings["domain"])
+    response.delete_cookie("refresh_token", path=settings["path"], domain=settings["domain"])
 
 
 def _ensure_aware(dt: datetime) -> datetime:
@@ -70,7 +94,7 @@ async def signup(
             detail="Self-serve signup is disabled. Please contact an administrator for access.",
         )
 
-    email = _normalize_email(payload.email)
+    email = normalize_email(payload.email)
 
     existing_email = db.query(User).filter(func.lower(User.email) == email).first()
     if existing_email:
@@ -118,18 +142,11 @@ async def login(
     db: Session = Depends(get_db),
 ):
     email_or_username = user_credentials.email_or_username
-    print(f"Login attempt for: '{email_or_username}'")
 
     if "@" in email_or_username:
-        print(f"Searching by email: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.email) == email_or_username.lower()).first()
     else:
-        print(f"Searching by username: '{email_or_username.lower()}'")
         user = db.query(User).filter(func.lower(User.username) == email_or_username.lower()).first()
-
-    print(f"User found: {user is not None}")
-    if user:
-        print(f"User details: email={user.email}, username={user.username}, active={user.is_active}, verified={user.is_verified}")
 
     if not user:
         raise HTTPException(
@@ -159,22 +176,7 @@ async def login(
     db.commit()
 
     # Also set cookies for clients preferring cookie auth
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        path="/",
-    )
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=False,
-        secure=False,
-        samesite="lax",
-        path="/",
-    )
+    _set_auth_cookies(response, access_token, refresh_token)
 
     return LoginResponse(
         user=UserResponse.from_orm(user),
@@ -188,10 +190,16 @@ async def login(
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
-    payload = verify_token(refresh_request.refresh_token, expected_type="refresh")
+    # Prefer cookie if present for cookie-only strategy; fall back to body for tooling
+    token_raw = request.cookies.get("refresh_token") or refresh_request.refresh_token
+    if not token_raw:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    payload = verify_token(token_raw, expected_type="refresh")
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -217,7 +225,7 @@ async def refresh_token(
         )
 
     user = db.query(User).filter(User.id == user_id).first()
-    expected_hash = compute_refresh_token_hash(refresh_request.refresh_token)
+    expected_hash = compute_refresh_token_hash(token_raw)
     if not user or user.refresh_token_hash != expected_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -238,23 +246,7 @@ async def refresh_token(
     user.token_version = (user.token_version or 0)
     db.commit()
 
-    # Set rotated cookies
-    response.set_cookie(
-        key="refresh_token",
-        value=new_refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        path="/",
-    )
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=False,
-        secure=False,
-        samesite="lax",
-        path="/",
-    )
+    _set_auth_cookies(response, access_token, new_refresh_token)
 
     return Token(
         access_token=access_token,
@@ -273,8 +265,7 @@ async def logout(
     current_user.token_version = (current_user.token_version or 0) + 1
     db.commit()
 
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    _clear_auth_cookies(response)
     return MessageResponse(message="Successfully logged out")
 
 
@@ -367,7 +358,7 @@ async def request_password_reset(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    email = _normalize_email(payload.email)
+    email = normalize_email(payload.email)
     user = db.query(User).filter(func.lower(User.email) == email).first()
 
     # Do not reveal whether email exists
@@ -383,7 +374,7 @@ async def request_password_reset(
         db.add(reset)
         db.commit()
 
-        reset_link = f"{get_frontend_base_url().rstrip('/')}/verify?reset_token={token}"
+        reset_link = f"{get_frontend_base_url().rstrip('/')}/reset?token={token}"
         background_tasks.add_task(
             send_password_reset_email,
             email=user.email,
@@ -495,7 +486,7 @@ async def accept_invite(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already in use")
 
     new_user = User(
-        email=_normalize_email(invite.email),
+        email=normalize_email(invite.email),
         username=payload.username,
         password_hash=hash_password(payload.password),
         is_admin=False,

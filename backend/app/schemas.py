@@ -61,7 +61,7 @@ class TokenData(BaseModel):
 
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 class LoginResponse(BaseModel):

@@ -41,17 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const isAuthenticated = !!user && !!token;
+  // Cookie-only auth: presence of a valid user implies authentication
+  const isAuthenticated = !!user;
 
   useEffect(() => {
-    const savedToken = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    if (savedToken) {
-      setToken(savedToken);
-      void verifyToken(savedToken);
-      return;
-    }
-    // Try cookie-based session: call verify without header; backend will read cookie
+    // Cookie-only: ask backend to verify via cookie; no header
     (async () => {
       try {
         const data = await verifyService("");
@@ -93,13 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const data = await loginService(emailOrUsername, password);
-      const { user: userData, tokens } = data;
-
+      const { user: userData } = data;
       setUser(userData);
-      setToken(tokens.access_token);
-
-      localStorage.setItem("access_token", tokens.access_token);
-      localStorage.setItem("refresh_token", tokens.refresh_token);
+      setToken(null);
     } catch (error) {
       const message = getErrorMessage(error);
       console.error("Login error:", error);
@@ -112,17 +102,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      const accessToken = localStorage.getItem("access_token");
-      if (accessToken) {
-        await logoutService(accessToken);
-      }
+      await logoutService("");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
       setUser(null);
       setToken(null);
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      // Cookie-only strategy: nothing to clear in localStorage
       setIsLoading(false);
     }
   };

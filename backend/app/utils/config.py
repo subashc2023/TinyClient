@@ -82,3 +82,35 @@ def get_allowed_cors_origins() -> list[str]:
             ordered.append(origin)
 
     return ordered
+
+
+def get_cookie_settings() -> dict:
+    """Return cookie settings derived from environment.
+
+    Keys:
+    - secure: bool
+    - samesite: str ("lax" | "strict" | "none")
+    - domain: str | None
+    - path: str
+    """
+    protocol = os.getenv("APP_PROTOCOL", "http").strip().lower() or "http"
+
+    # Sane defaults: secure only when using https; SameSite Lax; path "/"; domain optional
+    secure_raw = os.getenv("COOKIE_SECURE")
+    secure = (secure_raw.strip().lower() in {"1", "true", "yes", "on"}) if secure_raw else (protocol == "https")
+
+    samesite = (os.getenv("COOKIE_SAMESITE", "lax").strip().lower() or "lax")
+    if samesite not in {"lax", "strict", "none"}:
+        samesite = "lax"
+
+    domain = os.getenv("COOKIE_DOMAIN")
+    domain = domain.strip() if domain else None
+
+    path = os.getenv("COOKIE_PATH", "/").strip() or "/"
+
+    return {
+        "secure": secure,
+        "samesite": samesite,
+        "domain": domain,
+        "path": path,
+    }
