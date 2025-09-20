@@ -1,6 +1,15 @@
 # Caddy reverse proxy for TinyClient API (automatic TLS)
 # https://caddyserver.com/docs/install
 
+# Global options (set your real email!)
+{
+	email you@tinyclient.app
+	# Force Let's Encrypt (avoids ZeroSSL EAB errors on older Caddy builds)
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	# For testing (avoid rate limits), uncomment this staging CA temporarily:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
 api.tinyclient.app {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8001
