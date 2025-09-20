@@ -114,9 +114,19 @@ After seeding, credentials are taken from `.env` variables: `ADMIN_*` and `USER_
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Environment scheme (unified)
 
-Copy `.env.example` to `.env` and adjust values as needed. This project uses unified `APP_*` and `NEXT_PUBLIC_*` variables for both services; legacy variables are no longer supported.
+Use the provided templates:
+- `.env.local` for local dev (HTTP, localhost)
+- `.env.hosted` for Vercel (frontend) + VPS (backend)
+
+Precedence:
+- Frontend API: `NEXT_PUBLIC_API_BASE_URL` overrides; otherwise built from `NEXT_PUBLIC_APP_*`
+- Backend public URLs: `FRONTEND_BASE_URL` / `BACKEND_BASE_URL` override; otherwise built from `APP_*`
+
+Key production flags:
+- Cookies: `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none` (cross-site)
+- CORS: `EXTRA_ALLOWED_ORIGINS` plus optional `CORS_ALLOW_ORIGIN_REGEX`
 
 
 
@@ -127,6 +137,9 @@ docker-compose up --build       # build and start
 docker-compose up -d            # start in background
 docker-compose logs -f          # follow logs
 docker-compose down             # stop and remove
+
+# VPS-only backend
+docker compose -f docker-compose.vps.yml --env-file .env.hosted up -d --build
 ```
 
 ## 🔗 Useful links
