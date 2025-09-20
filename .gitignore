@@ -3,5 +3,6 @@ CLAUDE.md
 AGENTS.md
 .env
 .env.local
+.env.hosted
 tinyclient.db
 .cursorignore

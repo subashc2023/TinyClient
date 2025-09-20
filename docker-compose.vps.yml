@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: tinyclient-backend:prod
+    container_name: tinyclient-backend
+    restart: unless-stopped
+    env_file:
+      - .env.hosted
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - USER_EMAIL=${USER_EMAIL}
+      - USER_USERNAME=${USER_USERNAME}
+      - USER_PASSWORD=${USER_PASSWORD}
+    ports:
+      - "127.0.0.1:8001:8001"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
