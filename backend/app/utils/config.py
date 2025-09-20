@@ -12,8 +12,26 @@ def build_url(domain: str, protocol: str, port: str) -> str:
 
     return f"{normalized_protocol}://{normalized_domain}:{port}" if port else f"{normalized_protocol}://{normalized_domain}"
 
+def _normalize_url(value: str | None) -> str | None:
+    if not value:
+        return None
+    v = value.strip()
+    if not v:
+        return None
+    return v if v.startswith("http") else f"http://{v}"
+
+
 def get_frontend_base_url() -> str:
-    """Get the frontend base URL from unified config."""
+    """Get the frontend base URL.
+
+    Priority:
+    1) FRONTEND_BASE_URL (absolute URL)
+    2) Built from APP_DOMAIN/APP_PROTOCOL/FRONTEND_PORT
+    """
+    override = _normalize_url(os.getenv("FRONTEND_BASE_URL"))
+    if override:
+        return override
+
     domain = os.getenv("APP_DOMAIN", "localhost")
     protocol = os.getenv("APP_PROTOCOL", "http")
     port = os.getenv("FRONTEND_PORT", "3000")
@@ -21,7 +39,16 @@ def get_frontend_base_url() -> str:
     return build_url(domain, protocol, port)
 
 def get_backend_base_url() -> str:
-    """Get the backend base URL from unified config."""
+    """Get the backend base URL.
+
+    Priority:
+    1) BACKEND_BASE_URL (absolute URL)
+    2) Built from APP_DOMAIN/APP_PROTOCOL/BACKEND_PORT
+    """
+    override = _normalize_url(os.getenv("BACKEND_BASE_URL"))
+    if override:
+        return override
+
     domain = os.getenv("APP_DOMAIN", "localhost")
     protocol = os.getenv("APP_PROTOCOL", "http")
     port = os.getenv("BACKEND_PORT", "8001")

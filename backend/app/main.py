@@ -26,11 +26,15 @@ app = FastAPI(
 )
 
 allowed_origins = get_allowed_cors_origins()
+allow_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX", "").strip() or None
 logger.info(f"CORS allowed origins: {allowed_origins}")
+if allow_origin_regex:
+    logger.info(f"CORS allow_origin_regex: {allow_origin_regex}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
